@@ -1,6 +1,0 @@
-{
-  "name": "Senderos Guardia Mitre",
-  "description": "Aplicación móvil-first para explorar senderos, registrar tiempos y ver el ranking en Guardia Mitre.",
-  "requestFramePermissions": ["geolocation"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
