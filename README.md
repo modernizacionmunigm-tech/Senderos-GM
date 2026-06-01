@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Logo Municipalidad](src/assets/images/gm-logo.png)
+![Logo Municipalidad](src/assets/images/gm-logo-D_sjmzQB.png)
 ![Logo Proyecto](src/assets/images/isologo-senderos-wt.png)
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-blue?logo=github&style=for-the-badge)](https://modernizacionmunigm-tech.github.io/Senderos-GM/)
@@ -47,8 +47,8 @@ A través de esta aplicación web progresiva (PWA), visitantes y residentes pued
 - 🏆 **Ver rankings** de los mejores tiempos por categoría
 
 <div align="center">
-  <img src="src/assets/images/isotipo-concejo.png" alt="Concejo Deliberante" width="150" style="margin: 20px;">
-  <img src="src/assets/images/deporte.png" alt="Área de Deportes" width="150" style="margin: 20px;">
+  <img src="src/assets/images/isotipo-concejo-uFi3xZqq.png" alt="Concejo Deliberante" width="150" style="margin: 20px;">
+  <img src="src/assets/images/deporte-Bs4nf_m7.png" alt="Área de Deportes" width="150" style="margin: 20px;">
 </div>
 
 ---
@@ -373,10 +373,32 @@ Botón de emergencia siempre visible en la aplicación
 
 ---
 
-## 📄 Licencia
+## 📄 Licencia y Uso
 
-Este proyecto está desarrollado con fines educativos y de promoción turística para Guardia Mitre.
+Este proyecto está desarrollado con fines educativos y de promoción turística para Guardia Mitre. El código fuente está disponible para la comunidad.
 
 ### Código Fuente
+El código fuente de este proyecto está bajo la licencia **Apache License 2.0**.
+
+
+
+---
+
+<div align="center">
+
+<br>
+
+### 🌟 Hecho con ❤️ para Guardia Mitre
+
+*Promoviendo naturaleza, salud y comunidad*
+
+![Logo Proyecto](src/assets/images/isologo-senderos-wt.png)
+
+**Guardia Mitre, Río Negro, Argentina**  
+ Coordenadas: 40°25'S 63°40'W
+
+[⬆️ Volver al inicio](#-senderos-guardia-mitre---proyecto-monte-mitre)
+
+</div>
 
 El código fuente está disponible bajo licencia **Apache License 2.0** para fines educativos.
