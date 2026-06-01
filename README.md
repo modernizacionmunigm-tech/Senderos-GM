@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Logo Municipalidad](src/assets/images/gm-logo-D_sjmzQB.png)
-![Logo Proyecto](src/assets/images/isologo-senderos-wt.png)
+![Logo Municipalidad](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/gm-logo-D_sjmzQB.png)
+![Logo Proyecto](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isologo-senderos-wt-ConebJ8K.png)
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-blue?logo=github&style=for-the-badge)](https://modernizacionmunigm-tech.github.io/Senderos-GM/)
 [![PWA](https://img.shields.io/badge/PWA-Instalable-brightgreen?style=for-the-badge)](https://web.dev/progressive-web-apps/)
@@ -47,8 +47,8 @@ A través de esta aplicación web progresiva (PWA), visitantes y residentes pued
 - 🏆 **Ver rankings** de los mejores tiempos por categoría
 
 <div align="center">
-  <img src="src/assets/images/isotipo-concejo-uFi3xZqq.png" alt="Concejo Deliberante" width="150" style="margin: 20px;">
-  <img src="src/assets/images/deporte-Bs4nf_m7.png" alt="Área de Deportes" width="150" style="margin: 20px;">
+  <img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isotipo-concejo-uFi3xZqq.png" alt="Concejo Deliberante" width="150" style="margin: 20px;">
+  <img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/deporte-Bs4nf_m7.png" alt="Área de Deportes" width="150" style="margin: 20px;">
 </div>
 
 ---
@@ -87,7 +87,7 @@ Catálogo interactivo de especies nativas de la región:
 - Sincronización automática con Google Sheets
 - Tabla de clasificación en tiempo real
 - Filtros por sendero, categoría etaria y nombre de corredor
-- Medallas especiales para los tres primeros puestos 🏆🥉
+- Medallas especiales para los tres primeros puestos 🏆
 
 ###  Progressive Web App (PWA)
 
@@ -292,21 +292,21 @@ Los rankings se organizan por categorías etarias para garantizar competencia ju
 
 <div align="center">
 
-![Municipalidad de Guardia Mitre](src/assets/images/gm-logo.png)
+![Municipalidad de Guardia Mitre](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/gm-logo-D_sjmzQB.png)
 
 **Municipalidad de Guardia Mitre**  
 Impulso fundamental e institucional en la planificación, dotación de herrajes, guardaparques iniciales y mantenimiento de la traza para el uso del pueblo de Guardia Mitre.
 
 ---
 
-![Concejo Deliberante](src/assets/images/isotipo-concejo.png)
+![Concejo Deliberante](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isotipo-concejo-uFi3xZqq.png)
 
 **Concejo Deliberante**  
 Aprobación y sanción oficial de la ordenanza que habilita el proyecto. Garantía de legalidad y compromiso político con el desarrollo turístico y deportivo del municipio.
 
 ---
 
-![Área de Deportes](src/assets/images/deporte.png)
+![Área de Deportes](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/deporte-Bs4nf_m7.png)
 
 **Área de Deportes - Guardia Mitre**  
 *Prof. Denis Evans - Director*  
@@ -355,7 +355,7 @@ Esta iniciativa, orientada a promover la actividad física y el contacto con la 
 
 ### Consultas Generales
 
-📧 **Email**: [modernizacion.munigm@gmail.com](mailto:modernizacionmunigm@gmail.com)  
+📧 **Email**: [modernizacion.munigm@gmail.com](mailto:modernizacion.munigm@gmail.com)  
 🌐 **Web Municipal**: [guardiamitre.gob.ar](https://guardiamitre.gob.ar)  
 📱 **Facebook**: [Municipalidad GM](https://www.facebook.com/MunicipalidadGM/)  
 📷 **Instagram**: [@muniguardiamitre](https://www.instagram.com/muniguardiamitre)
@@ -380,7 +380,19 @@ Este proyecto está desarrollado con fines educativos y de promoción turística
 ### Código Fuente
 El código fuente de este proyecto está bajo la licencia **Apache License 2.0**.
 
-
+> **Copyright 2026 Gonzalo Baldomé**
+>
+> Licensed under the Apache License, Version 2.0 (the "License");
+> you may not use this file except in compliance with the License.
+> You may obtain a copy of the License at
+>
+> [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
+>
+> Unless required by applicable law or agreed to in writing, software
+> distributed under the License is distributed on an "AS IS" BASIS,
+> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+> See the License for the specific language governing permissions and
+> limitations under the License.
 
 ---
 
@@ -392,7 +404,7 @@ El código fuente de este proyecto está bajo la licencia **Apache License 2.0**
 
 *Promoviendo naturaleza, salud y comunidad*
 
-![Logo Proyecto](src/assets/images/isologo-senderos-wt.png)
+![Logo Proyecto](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isologo-senderos-wt-ConebJ8K.png)
 
 **Guardia Mitre, Río Negro, Argentina**  
  Coordenadas: 40°25'S 63°40'W
@@ -400,5 +412,3 @@ El código fuente de este proyecto está bajo la licencia **Apache License 2.0**
 [⬆️ Volver al inicio](#-senderos-guardia-mitre---proyecto-monte-mitre)
 
 </div>
-
-El código fuente está disponible bajo licencia **Apache License 2.0** para fines educativos.
