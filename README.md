@@ -403,9 +403,12 @@ El código fuente de este proyecto está bajo la licencia **Apache License 2.0**
 *Promoviendo naturaleza, salud y comunidad*
 <div align="center">
 <img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png" alt="Logo Proyecto" width="400">
-**Guardia Mitre, Río Negro, Argentina**  
-Coordenadas: 40°25'S 63°40'W
+
+  **Guardia Mitre, Río Negro, Argentina**  
+  Coordenadas: 40°25'S 63°40'W
 <div align="center">
-[⬆️ Volver al inicio](#-senderos-guardia-mitre---proyecto-monte-mitre)
+[⬆️ Volver al inicio]
+  
+(#-senderos-guardia-mitre---proyecto-monte-mitre)
 
 </div>
