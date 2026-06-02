@@ -292,22 +292,19 @@ Los rankings se organizan por categorías etarias para garantizar competencia ju
 
 <div align="center">
 
-![Municipalidad de Guardia Mitre](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png)
-
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png" alt="Municipalidad de Guardia Mitre" width="150">
 **Municipalidad de Guardia Mitre**  
 Impulso fundamental e institucional en la planificación, dotación de herrajes, guardaparques iniciales y mantenimiento de la traza para el uso del pueblo de Guardia Mitre.
 
 ---
 
-![Concejo Deliberante](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isotipo-concejo-uFi3xZqq.png)
-
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isotipo-concejo-uFi3xZqq.png" alt="Concejo Deliberante" width="150">
 **Concejo Deliberante**  
 Aprobación y sanción oficial de la ordenanza que habilita el proyecto. Garantía de legalidad y compromiso político con el desarrollo turístico y deportivo del municipio.
 
 ---
 
-![Área de Deportes](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/deporte-Bs4nf_m7.png)
-
+![Área de Deportes](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/deporte-Bs4nf_m7.png)  
 **Área de Deportes - Guardia Mitre**  
 *Prof. Denis Evans - Director*  
 Esta iniciativa, orientada a promover la actividad física y el contacto con la naturaleza, cuenta con el impulso y respaldo del Área de Deportes de la Municipalidad.
@@ -404,8 +401,7 @@ El código fuente de este proyecto está bajo la licencia **Apache License 2.0**
 
 *Promoviendo naturaleza, salud y comunidad*
 
-![Logo Proyecto](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png)
-
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png" alt="Logo Proyecto" width="200">
 **Guardia Mitre, Río Negro, Argentina**  
  Coordenadas: 40°25'S 63°40'W
 
