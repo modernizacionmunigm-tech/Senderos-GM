@@ -401,11 +401,11 @@ El código fuente de este proyecto está bajo la licencia **Apache License 2.0**
 ### 🌟 Hecho con ❤️ para Guardia Mitre
 
 *Promoviendo naturaleza, salud y comunidad*
-
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png" alt="Logo Proyecto" width="200">
+<div align="center">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png" alt="Logo Proyecto" width="400">
 **Guardia Mitre, Río Negro, Argentina**  
- Coordenadas: 40°25'S 63°40'W
-
+Coordenadas: 40°25'S 63°40'W
+<div align="center">
 [⬆️ Volver al inicio](#-senderos-guardia-mitre---proyecto-monte-mitre)
 
 </div>
