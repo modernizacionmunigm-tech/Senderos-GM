@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Logo Municipalidad](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/gm-logo-D_sjmzQB.png)
-![Logo Proyecto](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isologo-senderos-wt-ConebJ8K.png)
+![Logo Municipalidad](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png)
+![Logo Proyecto](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png)
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-blue?logo=github&style=for-the-badge)](https://modernizacionmunigm-tech.github.io/Senderos-GM/)
 [![PWA](https://img.shields.io/badge/PWA-Instalable-brightgreen?style=for-the-badge)](https://web.dev/progressive-web-apps/)
@@ -87,7 +87,7 @@ Catálogo interactivo de especies nativas de la región:
 - Sincronización automática con Google Sheets
 - Tabla de clasificación en tiempo real
 - Filtros por sendero, categoría etaria y nombre de corredor
-- Medallas especiales para los tres primeros puestos 🏆
+- Medallas especiales para los tres primeros puestos 🏆🥉
 
 ###  Progressive Web App (PWA)
 
@@ -292,7 +292,7 @@ Los rankings se organizan por categorías etarias para garantizar competencia ju
 
 <div align="center">
 
-![Municipalidad de Guardia Mitre](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/gm-logo-D_sjmzQB.png)
+![Municipalidad de Guardia Mitre](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png)
 
 **Municipalidad de Guardia Mitre**  
 Impulso fundamental e institucional en la planificación, dotación de herrajes, guardaparques iniciales y mantenimiento de la traza para el uso del pueblo de Guardia Mitre.
@@ -404,7 +404,7 @@ El código fuente de este proyecto está bajo la licencia **Apache License 2.0**
 
 *Promoviendo naturaleza, salud y comunidad*
 
-![Logo Proyecto](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isologo-senderos-wt-ConebJ8K.png)
+![Logo Proyecto](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png)
 
 **Guardia Mitre, Río Negro, Argentina**  
  Coordenadas: 40°25'S 63°40'W
