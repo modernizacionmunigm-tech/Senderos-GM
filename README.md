@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Logo Municipalidad](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png)
-![Logo Proyecto](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png)
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png" alt="Logo Municipalidad" width="200">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png" alt="Logo Proyecto" width="250">
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-blue?logo=github&style=for-the-badge)](https://modernizacionmunigm-tech.github.io/Senderos-GM/)
 [![PWA](https://img.shields.io/badge/PWA-Instalable-brightgreen?style=for-the-badge)](https://web.dev/progressive-web-apps/)
