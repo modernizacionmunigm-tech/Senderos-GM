@@ -292,19 +292,22 @@ Los rankings se organizan por categorías etarias para garantizar competencia ju
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png" alt="Municipalidad de Guardia Mitre" width="150">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png" alt="Municipalidad de Guardia Mitre" width="100">
+
 **Municipalidad de Guardia Mitre**  
 Impulso fundamental e institucional en la planificación, dotación de herrajes, guardaparques iniciales y mantenimiento de la traza para el uso del pueblo de Guardia Mitre.
 
 ---
 
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isotipo-concejo-uFi3xZqq.png" alt="Concejo Deliberante" width="150">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isotipo-concejo-uFi3xZqq.png" alt="Concejo Deliberante" width="100">
+
 **Concejo Deliberante**  
 Aprobación y sanción oficial de la ordenanza que habilita el proyecto. Garantía de legalidad y compromiso político con el desarrollo turístico y deportivo del municipio.
 
 ---
 
-![Área de Deportes](https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/deporte-Bs4nf_m7.png)  
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/deporte-Bs4nf_m7.png" alt="Área de Deportes" width="100">
+
 **Área de Deportes - Guardia Mitre**  
 *Prof. Denis Evans - Director*  
 Esta iniciativa, orientada a promover la actividad física y el contacto con la naturaleza, cuenta con el impulso y respaldo del Área de Deportes de la Municipalidad.
