@@ -1,8 +1,17 @@
-node_modules/
-build/
-dist/
-coverage/
-.DS_Store
-*.log
-.env*
-!.env.example
+# ---------------------------------------------------------------------------
+# Este repo es el del PROYECTO COMPLETO (rama `source`):
+#   app\        = la webapp (React + Vite + TS)
+#   datos\, marca\, el PDF = material del proyecto
+#   rama `main` = el build publicado por GitHub Pages (no es codigo)
+# ---------------------------------------------------------------------------
+
+# `app\.gitignore` se encarga de node_modules\ y dist\ (no se tocan desde acá)
+
+# La web anterior tiene su propio repo (SenderosGuardiaMitre): es archivo
+web-vieja/
+
+# Descarte: no se versiona, pero tampoco se borra
+_historico/
+
+# Copia de trabajo temporal que arma publicar.ps1
+_publicado/
