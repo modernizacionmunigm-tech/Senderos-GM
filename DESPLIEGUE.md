@@ -4,12 +4,13 @@
 
 ## La idea en una línea
 
-`main` **no es código**: es el build ya compilado. `source` es el código.
-Publicar = compilar y copiar el resultado a `main`.
+`main` **no es código**: es el build ya compilado. `source` es el proyecto
+completo (código + docs + material). Publicar = compilar y copiar el resultado a
+`main`.
 
 | Rama | Qué tiene | Quién la toca |
 |---|---|---|
-| `source` | El código fuente (`app/`: React + TS) | vos / el agente |
+| `source` | El proyecto completo: `app\` (el código), `AGENTS.md`, `DESPLIEGUE.md`, `publicar.ps1`, `datos\`, `marca\`, el PDF | vos / el agente |
 | `main` | `index.html` + `assets/` (el build) | sólo lo que sale de `npm run build` |
 
 **GitHub Pages sirve `main`.** Nada más. Por eso:
@@ -18,6 +19,8 @@ Publicar = compilar y copiar el resultado a `main`.
 > Un merge (o copiar el código fuente a mano) rompe el sitio.
 
 ## Forma normal: el script
+
+Desde la carpeta del proyecto (no desde `app\`):
 
 ```powershell
 cd "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Proyecto Senderos Municipalidad"
@@ -48,10 +51,11 @@ Después, GitHub Pages tarda **un minuto** en mostrar los cambios. Refrescá con
 
 ## Si lo tenés que hacer a mano
 
-Pasos exactos, equivalentes al script:
+Pasos exactos, equivalentes al script. Ojo: el repo es **la carpeta del
+proyecto** (`$s`), no `app\`.
 
 ```powershell
-$s = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Proyecto Senderos Municipalidad"
+$s   = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Proyecto Senderos Municipalidad"
 $app = "$s\app"
 $pub = "$s\_publicado"
 
@@ -62,8 +66,8 @@ npm run build
 # 2) copia de trabajo de main
 #    core.autocrlf=false es importante: en Windows git convierte LF->CRLF al
 #    bajar los archivos y eso ensucia las comparaciones.
-git -c core.autocrlf=false -C $app fetch origin
-git -c core.autocrlf=false -C $app worktree add -B main $pub origin/main
+git -c core.autocrlf=false -C $s fetch origin
+git -c core.autocrlf=false -C $s worktree add -B main $pub origin/main
 
 # 3) copiar el build encima
 Copy-Item "$app\dist\index.html" "$pub\index.html" -Force
@@ -79,7 +83,7 @@ git -c core.autocrlf=false -C $pub commit -m "Publicar build"
 git -c core.autocrlf=false -C $pub push origin main
 
 # 6) limpiar
-git -C $app worktree remove --force $pub
+git -C $s worktree remove --force $pub
 ```
 
 > ### ⚠️ No uses `git status` para ver si cambió algo
@@ -95,14 +99,14 @@ Si publicaste algo que rompió el sitio, se revierte con un commit al revés
 (nunca borrando historia):
 
 ```powershell
-$s = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Proyecto Senderos Municipalidad"
-$app = "$s\app"; $pub = "$s\_publicado"
+$s   = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Proyecto Senderos Municipalidad"
+$pub = "$s\_publicado"
 
-git -c core.autocrlf=false -C $app fetch origin
-git -c core.autocrlf=false -C $app worktree add --detach $pub origin/main
+git -c core.autocrlf=false -C $s fetch origin
+git -c core.autocrlf=false -C $s worktree add --detach $pub origin/main
 git -c core.autocrlf=false -C $pub revert --no-edit HEAD
 git -c core.autocrlf=false -C $pub push origin HEAD:main
-git -C $app worktree remove --force $pub
+git -C $s worktree remove --force $pub
 ```
 
 Eso deshace **la última publicación**. Para deshacer dos, repetí el `revert`
@@ -122,7 +126,19 @@ Eso deshace **la última publicación**. Para deshacer dos, repetí el `revert`
 | Cosa | Valor |
 |---|---|
 | Sitio en vivo | https://modernizacionmunigm-tech.github.io/Senderos-GM/ |
-| Rama `main` (publicado) | `1f36192 Update README.md` |
-| Rama `source` (código) | `c15fe09 Fuente del sitio Senderos Guardia Mitre (React + Vite + TS)` |
+| Rama `main` (publicado) | `1f36192 Update README.md` — no se toca desde el 18/10 |
+| Rama `source` (proyecto) | el proyecto completo, con el código en `app\`. Para ver el último: `git log --oneline -1` |
 | ¿Hay algo sin publicar? | **No.** El build actual es byte por byte idéntico a lo publicado |
 | Repo viejo `SenderosGuardiaMitre` | Ya no se publica (su URL da 404). Es archivo, está en `web-vieja\` |
+
+### Cómo se llegó a esta estructura (18/10/2026)
+
+Antes el repo tenía el código suelto en la raíz. Se reorganizó así:
+
+| Commit | Qué hizo |
+|---|---|
+| `c15fe09` | El código original de la webapp |
+| `128f91d` | El código pasó a `app\` (git lo tomó como *rename*: la historia se conservó) |
+| `5172757` | Se sumaron los docs y el material del proyecto |
+
+La rama `main` **no se tocó** en ninguna de esas reorganizaciones.

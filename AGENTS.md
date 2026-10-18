@@ -9,18 +9,24 @@ App **mobile-first** para recorrer los senderos del Monte Mitre: mapa con GPS,
 guía de flora y fauna, registro de tiempos y ranking. Se usa desde el celular,
 en el monte, muchas veces sin señal.
 
-| Carpeta | Qué es |
+## Esta carpeta ES el repo
+
+La carpeta del proyecto es el repo **`modernizacionmunigm-tech/Senderos-GM`**
+(rama `source`). Adentro está todo:
+
+| Carpeta / archivo | Qué es |
 |---|---|
-| `app/` | **El código vivo.** React + Vite + TypeScript |
-| `datos/` | Trazados y planillas del proyecto (CSV, KMZ) |
-| `marca/` | Logos del proyecto |
-| `web-vieja/` | La web anterior, estática. **Ya no se publica**: es archivo |
-| `_historico/` | Descarte (Google Studio, zips) |
+| `app\` | **El código vivo.** React + Vite + TypeScript |
+| `datos\` | Trazados y planillas del proyecto (CSV, KMZ) |
+| `marca\` | Logos del proyecto |
+| `AGENTS.md` (este), `DESPLIEGUE.md`, `publicar.ps1` | Documentación y script de publicación |
 | `Proyecto Senderos - Monte Mitre - Web app Interactiva.pdf` | El proyecto original |
+| `web-vieja\` | La web anterior, estática. **Ya no se publica**: es archivo. Tiene su propio repo (`SenderosGuardiaMitre`), por eso está ignorada por git |
+| `_historico\` | Descarte (Google Studio, zips). Ignorada por git |
 
 ## Dónde vive el código
 
-**`app/` es la única fuente de verdad.** Stack: React 19 + Vite 6 + TypeScript +
+**`app\` es la única fuente de verdad.** Stack: React 19 + Vite 6 + TypeScript +
 Tailwind 4 + Leaflet (mapas) + `motion` (animaciones).
 
 Los componentes están en `app/src/components/`:
@@ -36,27 +42,22 @@ Los componentes están en `app/src/components/`:
 
 Los datos están en `app/src/data.ts` (senderos) y `app/src/floraData.ts` (flora).
 
-## ⚠️ Los dos repos y las dos ramas (LO MÁS IMPORTANTE)
+## ⚠️ Las dos ramas (LO MÁS IMPORTANTE)
 
-El repo es **`modernizacionmunigm-tech/Senderos-GM`** y tiene **dos ramas con
-roles opuestos**:
+El repo tiene **dos ramas con roles opuestos**:
 
 | Rama | Qué tiene | Quién la toca |
 |---|---|---|
-| **`source`** | El **código fuente** (React + TS) | se trabaja acá |
+| **`source`** | El **proyecto completo**: el código (`app\`), los docs y el material | se trabaja acá |
 | **`main`** | El **build publicado** (`index.html` + `assets/`) | sólo lo que sale de `npm run build` |
 
 > ## 🔴 NUNCA mergear `source` → `main`
 >
 > **`main` no es código: es el resultado compilado.** Un merge (o un push del
 > código fuente) rompe el sitio. `main` sólo recibe archivos **copiados desde
-> `app/dist/`**.
+> `app\dist\`**.
 
-`app/` está parado en la rama **`source`**. El sitio en vivo es
-https://modernizacionmunigm-tech.github.io/Senderos-GM/
-
-Hay otro repo viejo, `SenderosGuardiaMitre` (la web anterior, estática). Está en
-`web-vieja/` como archivo y **ya no se publica** (su URL da 404).
+El sitio en vivo: https://modernizacionmunigm-tech.github.io/Senderos-GM/
 
 ## Comandos
 
@@ -74,12 +75,19 @@ sirve el sitio en un subdirectorio, no en la raíz. No cambiarlo.
 
 ## Cómo publicar
 
-`main` es una copia de `dist/`. Pasos y comandos exactos: **`DESPLIEGUE.md`**.
+Desde la carpeta del proyecto (no desde `app\`):
+
+```powershell
+.\publicar.ps1 -Simular     # compila y muestra qué cambiaría. No sube nada.
+.\publicar.ps1              # compila y publica
+```
+
+`main` es una copia de `app\dist\`. Pasos y comandos exactos: **`DESPLIEGUE.md`**.
 
 ## Datos y claves
 
-- `metadata.json` declara `MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API`, pero **el
-  código no usa Gemini**: es herencia de Google AI Studio. No hay claves.
+- `app/metadata.json` declara `MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API`, pero
+  **el código no usa Gemini**: es herencia de Google AI Studio. No hay claves.
 - `.env` está ignorado por git. En el repo sólo está `.env.example`, con valores
   de mentira. **Nunca** commitear un `.env` real.
 

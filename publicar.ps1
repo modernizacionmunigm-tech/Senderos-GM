@@ -6,6 +6,12 @@
 
   Sitio en vivo: https://modernizacionmunigm-tech.github.io/Senderos-GM/
 
+  Este repo es el del proyecto completo (rama `source`):
+      app\                     la webapp (React + Vite + TS)
+      AGENTS.md, DESPLIEGUE.md, publicar.ps1
+      datos\, marca\, el PDF
+  y la rama `main` es el build publicado.
+
   Ejemplos:
       .\publicar.ps1 -Simular     -> compila y MUESTRA que cambiaria, sin subir
       .\publicar.ps1              -> compila y publica
@@ -31,9 +37,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$raiz = $PSScriptRoot
-$app  = Join-Path $raiz 'app'
-$pub  = Join-Path $raiz '_publicado'
+$raiz = $PSScriptRoot                              # la carpeta del proyecto (= el repo)
+$repo = $raiz
+$app  = Join-Path $raiz 'app'                      # acá vive la webapp
+$pub  = Join-Path $raiz '_publicado'               # copia de trabajo de `main`
 $url  = 'https://modernizacionmunigm-tech.github.io/Senderos-GM/'
 
 if (-not (Test-Path -LiteralPath (Join-Path $app 'package.json'))) {
@@ -86,11 +93,11 @@ if (-not (Test-Path -LiteralPath (Join-Path $dist 'index.html'))) {
 Write-Host ''
 Write-Host '  Preparando la rama main en _publicado\...' -ForegroundColor Cyan
 
-Invoke-Git @('-C', $app, 'fetch', 'origin') | Out-Null
+Invoke-Git @('-C', $repo, 'fetch', 'origin') | Out-Null
 
-if (Test-Path -LiteralPath $pub) { Invoke-Git @('-C', $app, 'worktree', 'remove', '--force', $pub) | Out-Null }
+if (Test-Path -LiteralPath $pub) { Invoke-Git @('-C', $repo, 'worktree', 'remove', '--force', $pub) | Out-Null }
 
-Invoke-Git @('-C', $app, 'worktree', 'add', '-B', 'main', $pub, 'origin/main') | Out-Null
+Invoke-Git @('-C', $repo, 'worktree', 'add', '-B', 'main', $pub, 'origin/main') | Out-Null
 
 # ---------------------------------------------------------------------------
 # 3) Copiar el build encima de la copia
@@ -145,9 +152,9 @@ if ($Simular -and -not $limpio) {
   Write-Host '  -Simular: NO se subio nada.' -ForegroundColor Yellow
   Write-Host "  Dejo la copia de trabajo en: $pub"
   Write-Host '  Para ver el detalle:  git -C _publicado diff --cached'
-  Write-Host '  Para borrarla:        git -C app worktree remove --force _publicado'
+  Write-Host '  Para borrarla:        git worktree remove --force _publicado'
 } else {
-  if (Test-Path -LiteralPath $pub) { Invoke-Git @('-C', $app, 'worktree', 'remove', '--force', $pub) | Out-Null }
+  if (Test-Path -LiteralPath $pub) { Invoke-Git @('-C', $repo, 'worktree', 'remove', '--force', $pub) | Out-Null }
   Write-Host '  _publicado\ quedo limpio.'
 }
 
