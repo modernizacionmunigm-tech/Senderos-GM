@@ -38,6 +38,48 @@ function parseCSVLine(line: string, delimiter: string): string[] {
   return result;
 }
 
+/**
+ * La planilla puede traer el tiempo de tres maneras:
+ *  - minutos enteros ("45"), como se cargaba a mano;
+ *  - minutos con decimales ("45.517"), como lo manda el cronómetro del mapa;
+ *  - ya formateado ("45:31" o "01:05:31").
+ * Devuelve segundos, así se puede ordenar y mostrar siempre igual.
+ */
+function cellToSeconds(raw: string): number | null {
+  const text = (raw || '').trim().replace(/\s+/g, '');
+  if (!text) return null;
+
+  if (text.includes(':')) {
+    const parts = text.split(':').map((part) => Number(part.replace(',', '.')));
+    if (parts.some((n) => isNaN(n))) return null;
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return null;
+  }
+
+  const minutes = Number(text.replace(',', '.'));
+  if (isNaN(minutes)) return null;
+  return Math.round(minutes * 60);
+}
+
+function secondsToClock(total: number): string {
+  const secs = Math.max(0, Math.round(total));
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
+}
+
+/** "19/10/2026" y "2026-10-19" tienen que compararse igual. */
+function dayKey(value: string): string {
+  const text = (value || '').trim();
+  const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, '0')}-${iso[3].padStart(2, '0')}`;
+  const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+  return text.toLowerCase();
+}
+
 export default function RankingTable({ refreshTrigger }: RankingTableProps) {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [filterTrail, setFilterTrail] = useState<string>('');
@@ -132,15 +174,12 @@ export default function RankingTable({ refreshTrigger }: RankingTableProps) {
           }
         }
 
-        // Convert minutes to HH:MM:SS format
+        // El tiempo puede venir en minutos (entero o con decimales) o ya en
+        // "hh:mm:ss": lo pasamos siempre a "hh:mm:ss" para mostrar y ordenar.
         let timeValue = '00:00:00';
-        const minutesStr = columns[timeMinutesIdx] || '0';
-        const totalMinutes = parseInt(minutesStr.replace(/[^0-9]/g, ''), 10);
-        
-        if (!isNaN(totalMinutes) && totalMinutes > 0) {
-          const hours = Math.floor(totalMinutes / 60);
-          const mins = totalMinutes % 60;
-          timeValue = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`;
+        const totalSeconds = cellToSeconds(columns[timeMinutesIdx] || '');
+        if (totalSeconds !== null && totalSeconds > 0) {
+          timeValue = secondsToClock(totalSeconds);
         }
 
         // Get category (fallback to "GENERAL" if not found)
@@ -177,16 +216,21 @@ export default function RankingTable({ refreshTrigger }: RankingTableProps) {
 
   // Merge data
   useEffect(() => {
-    const localUserRuns = JSON.parse(localStorage.getItem('saved_user_ranks') || '[]');
-    
-    const sheetUniqueKeys = new Set(sheetRecords.map(r => `${r.name.toLowerCase()}_${r.trailName.toLowerCase()}_${r.date}`));
-    
-    const filteredBaseline = INITIAL_RANKINGS.filter(mock => {
-      const key = `${mock.name.toLowerCase()}_${mock.trailName.toLowerCase()}_${mock.date}`;
-      return !sheetUniqueKeys.has(key);
-    });
+    const storedRuns = JSON.parse(localStorage.getItem('saved_user_ranks') || '[]');
+    const localUserRuns: any[] = Array.isArray(storedRuns) ? storedRuns : [];
 
-    const combined = [...localUserRuns, ...sheetRecords, ...filteredBaseline];
+    const markKey = (run: { name?: string; trailName?: string; date?: string }) =>
+      `${(run.name || '').trim().toLowerCase()}|${(run.trailName || '').trim().toLowerCase()}|${dayKey(run.date || '')}`;
+
+    const sheetUniqueKeys = new Set(sheetRecords.map(markKey));
+
+    // Una marca del cronómetro se ve primero local y después aparece en la
+    // planilla: cuando ya está en la planilla, no la mostramos dos veces.
+    const localOnly = localUserRuns.filter((run) => !sheetUniqueKeys.has(markKey(run)));
+
+    const filteredBaseline = INITIAL_RANKINGS.filter(mock => !sheetUniqueKeys.has(markKey(mock)));
+
+    const combined = [...localOnly, ...sheetRecords, ...filteredBaseline];
     setRecords(combined);
   }, [refreshTrigger, sheetRecords]);
 

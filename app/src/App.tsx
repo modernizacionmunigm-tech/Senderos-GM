@@ -29,6 +29,7 @@ import TrailCard from './components/TrailCard';
 import TimeForm from './components/TimeForm';
 import RankingTable from './components/RankingTable';
 import AboutProject from './components/AboutProject';
+import { flushPendingMarks, pendingMarksCount } from './corredor';
 // Mapa y guía de flora se cargan aparte (code splitting): Leaflet pesa y no
 // hace falta hasta que el usuario entra a esas secciones.
 const MapModule = lazy(() => import('./components/MapModule'));
@@ -65,6 +66,25 @@ export default function App() {
   
   // Real-time scores reload clock trigger
   const [refreshRanks, setRefreshRanks] = useState(0);
+
+  // Marcas cargadas desde el cronómetro que quedaron esperando señal.
+  const [pendingMarks, setPendingMarks] = useState(0);
+
+  // El formulario manual queda como respaldo, escondido detrás de un enlace.
+  const [showManualForm, setShowManualForm] = useState(false);
+
+  // Si quedaron marcas en cola (se terminó un recorrido sin señal), se suben
+  // solas al abrir la página o cuando vuelve la conexión.
+  useEffect(() => {
+    const sync = async () => {
+      const sent = await flushPendingMarks();
+      setPendingMarks(pendingMarksCount());
+      if (sent > 0) setRefreshRanks((prev) => prev + 1);
+    };
+    void sync();
+    window.addEventListener('online', sync);
+    return () => window.removeEventListener('online', sync);
+  }, []);
 
   // Vibration support
   const triggerVibrate = (ms: number = 45) => {
@@ -358,6 +378,11 @@ export default function App() {
                   setMapSimpleMode(value);
                   localStorage.setItem('map_simple_mode', String(value));
                 }}
+                onGoToRanking={() => setActiveTab('ranking')}
+                onMarkSaved={() => {
+                  setRefreshRanks((prev) => prev + 1);
+                  setPendingMarks(pendingMarksCount());
+                }}
               />
             </Suspense>
           </div>
@@ -379,10 +404,59 @@ export default function App() {
           </div>
         )}
 
-        {/* VIEW 4: TIMES FORM */}
+        {/* VIEW 4: REGISTRAR UN TIEMPO */}
         {activeTab === 'tiempos' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
-            <TimeForm onTimeAdded={() => incrementRefreshRanks(false)} />
+            <div className="border-b border-gray-100 pb-3">
+              <h2 className="text-2xl font-extrabold text-gray-800 font-display">Registrar un tiempo</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Si hacés el recorrido con el celular, el tiempo se carga solo
+                desde el mapa cuando terminás el sendero.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-5 md:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                <span className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <Map className="w-5 h-5" />
+                </span>
+                <div className="flex-1">
+                  <h3 className="font-display font-bold text-sm text-gray-800">¿Lo hiciste con el teléfono?</h3>
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                    Entrá al mapa, elegí el sendero y apretá «Grabar Recorrido».
+                    Cuando pasás todos los puntos y volvés al inicio, el
+                    cronómetro reconoce que terminaste y te deja cargar el
+                    tiempo en la tabla.
+                  </p>
+                </div>
+                <button
+                  onClick={() => { triggerVibrate(); setActiveTab('mapa'); }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl active:scale-95 shrink-0"
+                >
+                  Ir al mapa
+                </button>
+              </div>
+
+              {pendingMarks > 0 && (
+                <p className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Hay {pendingMarks} {pendingMarks === 1 ? 'marca guardada' : 'marcas guardadas'} esperando
+                  señal. Se suben solas cuando vuelva la conexión.
+                </p>
+              )}
+
+              <div className="border-t border-gray-100 pt-4">
+                <button
+                  onClick={() => { triggerVibrate(); setShowManualForm(!showManualForm); }}
+                  className="text-xs font-bold text-blue-700 hover:text-blue-900 underline underline-offset-2"
+                >
+                  {showManualForm
+                    ? 'Ocultar el formulario manual'
+                    : 'Cargar un tiempo que hice sin el celular'}
+                </button>
+              </div>
+            </div>
+
+            {showManualForm && <TimeForm onTimeAdded={() => incrementRefreshRanks(false)} />}
           </div>
         )}
 

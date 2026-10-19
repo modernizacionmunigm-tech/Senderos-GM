@@ -20,10 +20,14 @@ import {
   CheckCircle2,
   Maximize2,
   Minimize2,
-  HelpCircle
+  HelpCircle,
+  User,
+  Flag,
+  Send
 } from 'lucide-react';
 import { Trail, PointOfInterest } from '../types';
 import { TRAILS, GUARDIA_MITRE_CENTER } from '../data';
+import { getRunnerName, saveRunnerName, formatSeconds, submitMark } from '../corredor';
 
 // Helper function to calculate distance using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -102,9 +106,13 @@ interface MapModuleProps {
   /** Avisa al padre cuando se prende/apaga el Modo Simple, así el botón del
    *  encabezado y el ojito del mapa quedan siempre sincronizados. */
   onSimpleModeChange?: (value: boolean) => void;
+  /** Lleva a la tabla de posiciones después de cargar una marca. */
+  onGoToRanking?: () => void;
+  /** Avisa que hay una marca nueva para que la tabla se refresque. */
+  onMarkSaved?: () => void;
 }
 
-export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpleMode = false, onSimpleModeChange }: MapModuleProps) {
+export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpleMode = false, onSimpleModeChange, onGoToRanking, onMarkSaved }: MapModuleProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   
@@ -125,6 +133,16 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const recordingRef = useRef(false);
   const followUserRef = useRef(false);
   const lastCheckpointRef = useRef(-1);
+
+  // Reflejos del cronómetro y del recorrido: la lectura del GPS se registra
+  // una sola vez (al abrir el mapa), así que no puede leer los estados
+  // actuales. Con estos refs sabe la hora y la distancia del momento.
+  const elapsedSecondsRef = useRef(0);
+  const totalDistanceRef = useRef(0);
+  const recordPathRef = useRef<[number, number][]>([]);
+  const lastRecordedPointRef = useRef<[number, number] | null>(null);
+  const finishedRef = useRef(false);
+  const startInfoRef = useRef<{ dateISO: string; time: string }>({ dateISO: '', time: '' });
 
   // States
   const [mapType, setMapType] = useState<'street' | 'satellite'>('street');
@@ -150,6 +168,25 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const [showCheckpointBtn, setShowCheckpointBtn] = useState(false);
   const [lastCheckpointIndex, setLastCheckpointIndex] = useState(-1);
   const [checkpointMessage, setCheckpointMessage] = useState<string | null>(null);
+
+  // Nombre del corredor: se pide una sola vez al entrar al mapa y se guarda.
+  const [runnerName, setRunnerName] = useState<string>(() => getRunnerName());
+  const [showNamePrompt, setShowNamePrompt] = useState<boolean>(() => !getRunnerName());
+  const [nameDraft, setNameDraft] = useState<string>(() => getRunnerName());
+
+  // Fin del recorrido: se reconoce solo cuando pasó todos los puntos y volvió
+  // al inicio (o llegó a la meta, en los senderos que la tienen).
+  const [finished, setFinished] = useState(false);
+  const [finishSeconds, setFinishSeconds] = useState(0);
+  const [finishDistance, setFinishDistance] = useState(0);
+  const [finishWeather, setFinishWeather] = useState('Soleado');
+  const [markStatus, setMarkStatus] = useState<'idle' | 'enviando' | 'enviado' | 'en_cola'>('idle');
+  const [markName, setMarkName] = useState<string>(() => getRunnerName());
+  const [markAccepted, setMarkAccepted] = useState(true);
+  const [markError, setMarkError] = useState<string | null>(null);
+
+  useEffect(() => { elapsedSecondsRef.current = elapsedSeconds; }, [elapsedSeconds]);
+  useEffect(() => { recordPathRef.current = recordPath; }, [recordPath]);
 
   useEffect(() => { userCoordsRef.current = userCoords; }, [userCoords]);
   useEffect(() => { recordingRef.current = recording; }, [recording]);
@@ -449,7 +486,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     while (nextPoiIndex < trail.pointsOfInterest.length && trail.pointsOfInterest[nextPoiIndex].type === 'inicio') {
       nextPoiIndex += 1;
     }
-    if (nextPoiIndex >= trail.pointsOfInterest.length) return false; // Ya terminaste
+    if (nextPoiIndex >= trail.pointsOfInterest.length) {
+      // Ya pasó todos los puntos: puede ser que haya terminado el recorrido.
+      return checkFinish(coords, trail);
+    }
 
     const nextPoi = trail.pointsOfInterest[nextPoiIndex];
     const distanceToPoi = calculateDistance(coords[0], coords[1], nextPoi.lat, nextPoi.lng);
@@ -468,6 +508,91 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
       return true;
     }
     return false;
+  };
+
+  // El sendero elegido, para mostrar el progreso de los puntos.
+  const currentTrail = selectedTrailId
+    ? TRAILS.find(t => t.id === selectedTrailId) || null
+    : null;
+  const checkpointTotal = currentTrail
+    ? currentTrail.pointsOfInterest.filter(p => p.type !== 'inicio').length
+    : 0;
+  const checkpointsPassed = currentTrail
+    ? currentTrail.pointsOfInterest
+        .slice(0, lastCheckpointIndex + 1)
+        .filter(p => p.type !== 'inicio').length
+    : 0;
+
+  // Guarda el trazado grabado en el teléfono (lista "Mis recorridos").
+  // Usa los refs porque también la llama la lectura del GPS, que no ve los
+  // estados actuales.
+  const saveRecordedRoute = () => {
+    const path = recordPathRef.current;
+    const distance = totalDistanceRef.current;
+    const seconds = elapsedSecondsRef.current;
+    if (path.length < 2) return;
+
+    try {
+      const recordedRoutes = JSON.parse(localStorage.getItem('saved_recorded_routes') || '[]');
+      const trailId = selectedTrailIdRef.current;
+      const trailName = trailId
+        ? TRAILS.find(t => t.id === trailId)?.name || 'Recorrido Libre'
+        : 'Recorrido Libre';
+      const newRoute = {
+        id: 'trace_' + Date.now(),
+        date: new Date().toLocaleDateString('es-AR'),
+        distance: (distance / 1000).toFixed(2),
+        duration: formatTime(seconds),
+        trailName,
+        coords: path,
+      };
+      recordedRoutes.unshift(newRoute);
+      localStorage.setItem('saved_recorded_routes', JSON.stringify(recordedRoutes));
+      setSavedRoutes(recordedRoutes);
+    } catch (e) {
+      console.warn('No se pudo guardar el recorrido:', e);
+    }
+  };
+
+  // Se terminó el recorrido: se congela el cronómetro y aparece la tarjeta
+  // para cargar el tiempo en el ranking.
+  const markFinished = () => {
+    finishedRef.current = true;
+    setFinished(true);
+    setFinishSeconds(elapsedSecondsRef.current);
+    setFinishDistance(totalDistanceRef.current);
+    setMarkStatus('idle');
+    setMarkError(null);
+    setRecording(false);
+    setShowCheckpointBtn(false);
+    setMapExpanded(false);
+    setCheckpointMessage(null);
+    setMarkName(runnerName || getRunnerName());
+    triggerVibrate([150, 80, 150, 80, 250]);
+    saveRecordedRoute();
+  };
+
+  // ¿Llegó al final del sendero? Se pide haber pasado todos los puntos y,
+  // además, haber hecho el recorrido. En los circuitos cerrados (Baja y
+  // Media) hay que volver cerca del inicio; en el Alta alcanza con la meta.
+  const checkFinish = (coords: [number, number], trail: Trail) => {
+    if (finishedRef.current) return false;
+
+    const covered = totalDistanceRef.current;
+    if (covered < trail.distance * 1000 * 0.8) return false;
+
+    const lastPoi = trail.pointsOfInterest[lastCheckpointRef.current];
+    const endsAtFinish = !!lastPoi && lastPoi.type === 'fin';
+
+    if (!endsAtFinish) {
+      const start = trail.pointsOfInterest.find(p => p.type === 'inicio');
+      const startLat = start ? start.lat : trail.startPoint[0];
+      const startLng = start ? start.lng : trail.startPoint[1];
+      if (calculateDistance(coords[0], coords[1], startLat, startLng) > 50) return false;
+    }
+
+    markFinished();
+    return true;
   };
 
   // GPS en vivo: una sola suscripción mientras el mapa está abierto.
@@ -492,20 +617,20 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
       if (recordingRef.current) {
         checkCheckpointProximity(coords);
 
-        setRecordPath((prev) => {
-          const nextPath = [...prev, coords];
-
-          if (prev.length > 0) {
-            const last = prev[prev.length - 1];
-            const increment = calculateDistance(last[0], last[1], latitude, longitude);
-
-            // Ignoramos el ruido GPS y las lecturas muy imprecisas
-            if (increment > 2 && accuracy < 50) {
-              setTotalDistance((dist) => dist + increment);
-            }
+        // El recorrido se arma por partes: primero la distancia (con el punto
+        // anterior) y después el punto nuevo. El cálculo va afuera del
+        // updater de React, si no el acumulado se puede contar dos veces.
+        const previous = lastRecordedPointRef.current;
+        if (previous) {
+          const increment = calculateDistance(previous[0], previous[1], latitude, longitude);
+          // Ignoramos el ruido GPS y las lecturas muy imprecisas
+          if (increment > 2 && accuracy < 50) {
+            totalDistanceRef.current += increment;
+            setTotalDistance(totalDistanceRef.current);
           }
-          return nextPath;
-        });
+        }
+        lastRecordedPointRef.current = coords;
+        setRecordPath((prev) => [...prev, coords]);
       }
     };
 
@@ -614,9 +739,30 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     setRecordPath([]);
     setTotalDistance(0);
     setElapsedSeconds(0);
+    recordPathRef.current = [];
+    totalDistanceRef.current = 0;
+    elapsedSecondsRef.current = 0;
+    lastRecordedPointRef.current = null;
+    finishedRef.current = false;
+    setFinished(false);
+    setMarkStatus('idle');
+    setMarkError(null);
     lastCheckpointRef.current = -1;
     setLastCheckpointIndex(-1);
     setCheckpointMessage(null);
+
+    // Guardamos día y hora del arranque: son los que van a la planilla.
+    const now = new Date();
+    startInfoRef.current = {
+      dateISO: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
+      time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    };
+
+    // Si todavía no dijo cómo se llama, le preguntamos ahora.
+    if (!runnerName && !getRunnerName()) {
+      setShowNamePrompt(true);
+    }
+
     setShowCheckpointBtn(true);
     setRecording(true);
   };
@@ -631,26 +777,51 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     lastCheckpointRef.current = -1;
     setLastCheckpointIndex(-1);
     setCheckpointMessage(null);
-    
-    // Save recorded trace locally
-    if (recordPath.length > 1) {
-      const recordedRoutes = JSON.parse(localStorage.getItem('saved_recorded_routes') || '[]');
-      const newRoute = {
-        id: 'trace_' + Date.now(),
-        date: new Date().toLocaleDateString('es-AR'),
-        distance: (totalDistance / 1000).toFixed(2),
-        duration: formatTime(elapsedSeconds),
-        trailName: selectedTrailId 
-          ? TRAILS.find(t => t.id === selectedTrailId)?.name || 'Recorrido Libre'
-          : 'Recorrido Libre',
-        coords: recordPath,
-      };
-      recordedRoutes.unshift(newRoute);
-      localStorage.setItem('saved_recorded_routes', JSON.stringify(recordedRoutes));
-      setSavedRoutes(recordedRoutes);
-      
+
+    // Guardamos el trazado en el teléfono
+    const hadPath = recordPath.length > 1;
+    saveRecordedRoute();
+    if (hadPath) {
       alert(`¡Recorrido guardado con éxito! Recorriste ${(totalDistance / 1000).toFixed(2)} km en ${formatTime(elapsedSeconds)}.`);
     }
+  };
+
+  // Carga la marca del cronómetro al ranking, sin pasar por el formulario.
+  const handleSubmitMark = async () => {
+    if (!currentTrail) return;
+    const name = markName.trim();
+    if (!name) {
+      setMarkError('Escribí tu nombre para aparecer en la tabla.');
+      return;
+    }
+    if (!markAccepted) {
+      setMarkError('Necesitamos tu visto bueno para publicar el tiempo.');
+      return;
+    }
+
+    setMarkError(null);
+    setMarkStatus('enviando');
+    saveRunnerName(name);
+    setRunnerName(name);
+
+    const info = startInfoRef.current;
+    const today = new Date();
+    const result = await submitMark({
+      name,
+      trailName: currentTrail.name,
+      seconds: finishSeconds,
+      dateISO:
+        info.dateISO ||
+        `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
+      startTime:
+        info.time ||
+        `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`,
+      weather: finishWeather,
+    });
+
+    setMarkStatus(result);
+    if (result === 'enviado') triggerVibrate(150);
+    onMarkSaved?.();
   };
 
   // Calidad de la señal GPS. Sin señal de satélites el celular devuelve una
@@ -695,6 +866,19 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
             <p className="text-xl text-gray-500 font-medium">
               {(totalDistance / 1000).toFixed(2)} km recorridos
             </p>
+            {currentTrail && (
+              <div className="w-full max-w-xs mx-auto space-y-1.5">
+                <p className="text-xs font-bold text-gray-500">
+                  Puntos: {checkpointsPassed} de {checkpointTotal}
+                </p>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 transition-all"
+                    style={{ width: `${checkpointTotal ? (checkpointsPassed / checkpointTotal) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
             {gpsAccuracy && (
               <p className={`text-xs font-semibold ${
                 gpsAccuracy <= 30 ? 'text-emerald-600'
@@ -1027,7 +1211,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                   Grabando
                 </span>
                 <span className="text-lg font-black font-mono text-gray-900">{formatTime(elapsedSeconds)}</span>
-                <span className="block text-[10px] text-gray-500">{(totalDistance / 1000).toFixed(2)} km</span>
+                <span className="block text-[10px] text-gray-500">
+                  {(totalDistance / 1000).toFixed(2)} km
+                  {currentTrail ? ` · ${checkpointsPassed}/${checkpointTotal} puntos` : ''}
+                </span>
               </div>
               <button
                 onClick={stopTracking}
@@ -1040,6 +1227,176 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
           )}
         </div>
       ) : null}
+
+      {/* Tarjeta de fin: el recorrido se reconoció solo (pasó todos los puntos
+          y volvió al inicio). Desde acá el tiempo se carga al ranking sin
+          pasar por el formulario. */}
+      {finished && currentTrail && (
+        <div id="finish-card" className="hc-dark bg-emerald-800 text-white rounded-2xl p-5 shadow-lg space-y-4 animate-in zoom-in-95">
+          <div className="flex items-center gap-3">
+            <span className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+              <Flag className="w-5 h-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200">¡Terminaste!</p>
+              <h3 className="font-display font-extrabold text-lg leading-tight truncate">{currentTrail.name}</h3>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center bg-black/20 rounded-xl p-3">
+            <div>
+              <span className="block text-[9px] uppercase tracking-wider text-emerald-200 font-mono">Tiempo</span>
+              <strong className="text-base font-black font-mono">{formatSeconds(finishSeconds)}</strong>
+            </div>
+            <div>
+              <span className="block text-[9px] uppercase tracking-wider text-emerald-200 font-mono">Distancia</span>
+              <strong className="text-base font-black font-mono">{(finishDistance / 1000).toFixed(2)} km</strong>
+            </div>
+            <div>
+              <span className="block text-[9px] uppercase tracking-wider text-emerald-200 font-mono">Puntos</span>
+              <strong className="text-base font-black font-mono">{checkpointTotal}/{checkpointTotal}</strong>
+            </div>
+          </div>
+
+          {markStatus === 'enviado' || markStatus === 'en_cola' ? (
+            <div className="space-y-3">
+              <div className="bg-white/15 rounded-xl p-3 text-xs leading-relaxed">
+                {markStatus === 'enviado'
+                  ? '✅ Tu tiempo quedó cargado y ya figura en la tabla de posiciones.'
+                  : '📥 Quedó guardado en tu teléfono. Se sube solo cuando vuelva la señal.'}
+              </div>
+              <div className="flex gap-2">
+                {onGoToRanking && (
+                  <button
+                    onClick={() => { triggerVibrate(); onGoToRanking(); }}
+                    className="flex-1 py-3 bg-white text-emerald-800 font-bold rounded-xl text-xs"
+                  >
+                    Ver la tabla
+                  </button>
+                )}
+                <button
+                  onClick={() => { triggerVibrate(); setFinished(false); finishedRef.current = false; }}
+                  className="flex-1 py-3 bg-white/15 text-white font-bold rounded-xl text-xs"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+                  Tu nombre para la tabla
+                </span>
+                <input
+                  value={markName}
+                  onChange={(e) => setMarkName(e.target.value)}
+                  placeholder="Ej: Juan Pérez"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white text-gray-900 text-sm font-semibold focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-200 mb-1.5">
+                  ¿Cómo estuvo el clima?
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Soleado', 'Nublado', 'Ventoso', 'Lluvioso'].map((w) => (
+                    <button
+                      key={w}
+                      onClick={() => { triggerVibrate(20); setFinishWeather(w); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                        finishWeather === w
+                          ? 'bg-white text-emerald-800 border-white'
+                          : 'bg-white/10 text-white border-white/30'
+                      }`}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="flex items-start gap-2 text-[11px] leading-snug text-emerald-50 selection:bg-transparent">
+                <input
+                  type="checkbox"
+                  checked={markAccepted}
+                  onChange={(e) => setMarkAccepted(e.target.checked)}
+                  className="mt-0.5 rounded border-white/40"
+                />
+                <span>Acepto que mi nombre y mi tiempo aparezcan públicamente en el ranking.</span>
+              </label>
+
+              {markError && <p className="text-xs font-bold text-amber-200">{markError}</p>}
+
+              <button
+                onClick={handleSubmitMark}
+                disabled={markStatus === 'enviando'}
+                className="w-full py-3.5 bg-white text-emerald-800 font-extrabold rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-60"
+              >
+                <Send className="w-4 h-4" />
+                {markStatus === 'enviando' ? 'Cargando…' : 'Cargar mi tiempo al ranking'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pedido de nombre: una sola vez, al entrar al mapa. */}
+      {showNamePrompt && (
+        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start gap-2.5">
+              <span className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <User className="w-5 h-5" />
+              </span>
+              <div>
+                <h3 className="font-display font-extrabold text-base text-gray-900">¿Cómo te llamás?</h3>
+                <p className="text-[11px] text-gray-500 leading-snug">
+                  Se usa para cargar tu tiempo en el ranking. Queda guardado en
+                  este teléfono, no se pide de nuevo.
+                </p>
+              </div>
+            </div>
+            <input
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              placeholder="Ej: Juan Pérez o Senderista2024"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && nameDraft.trim()) {
+                  saveRunnerName(nameDraft);
+                  setRunnerName(nameDraft.trim());
+                  setMarkName(nameDraft.trim());
+                  setShowNamePrompt(false);
+                }
+              }}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowNamePrompt(false)}
+                className="flex-1 py-2.5 bg-gray-100 text-gray-600 font-bold text-xs rounded-xl"
+              >
+                Ahora no
+              </button>
+              <button
+                onClick={() => {
+                  if (!nameDraft.trim()) return;
+                  triggerVibrate(50);
+                  saveRunnerName(nameDraft);
+                  setRunnerName(nameDraft.trim());
+                  setMarkName(nameDraft.trim());
+                  setShowNamePrompt(false);
+                }}
+                disabled={!nameDraft.trim()}
+                className="flex-1 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl disabled:opacity-50"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Track Recorder Section (Visible siempre que no esté en modo simple grabando) */}
       {(!simpleMode || !recording) && (
@@ -1057,6 +1414,39 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                 ? 'Modo optimizado: oculta el mapa y prioriza el cronómetro y la batería.' 
                 : 'Dibuja tu trayecto en tiempo real usando el receptor de tu teléfono.'}
             </p>
+
+            {/* Nombre del corredor: se guarda y se usa para cargar el tiempo */}
+            <button
+              onClick={() => { setNameDraft(runnerName); setShowNamePrompt(true); }}
+              className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-emerald-700 transition-colors"
+            >
+              <User className="w-3 h-3" />
+              {runnerName ? `Corredor: ${runnerName}` : 'Poner mi nombre'}
+              <span className="text-gray-300">·</span>
+              <span className="text-emerald-700">editar</span>
+            </button>
+
+            {/* Progreso de los puntos del sendero elegido */}
+            {currentTrail && (
+              <div className="pt-1 space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  Puntos validados: {checkpointsPassed} de {checkpointTotal}
+                </p>
+                <div className="h-1.5 w-44 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 transition-all"
+                    style={{ width: `${checkpointTotal ? (checkpointsPassed / checkpointTotal) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            {!currentTrail && !recording && (
+              <p className="text-[11px] font-medium text-amber-700 leading-snug">
+                Elegí un sendero para que el cronómetro valide los puntos y se
+                pueda cargar el tiempo al ranking.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
