@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { Trail, PointOfInterest } from '../types';
 import { TRAILS, CATEGORIES, GUARDIA_MITRE_CENTER } from '../data';
-import { getRunnerName, saveRunnerName, formatSeconds, submitMark } from '../corredor';
+import { getRunnerName, saveRunnerName, getRunnerCategory, saveRunnerCategory, formatSeconds, submitMark } from '../corredor';
 
 // Helper function to calculate distance using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -169,10 +169,15 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const [lastCheckpointIndex, setLastCheckpointIndex] = useState(-1);
   const [checkpointMessage, setCheckpointMessage] = useState<string | null>(null);
 
-  // Nombre del corredor: se pide una sola vez al entrar al mapa y se guarda.
+  // Nombre y categoría del corredor: se piden una sola vez al entrar al mapa y
+  // se guardan en el teléfono.
   const [runnerName, setRunnerName] = useState<string>(() => getRunnerName());
-  const [showNamePrompt, setShowNamePrompt] = useState<boolean>(() => !getRunnerName());
+  const [runnerCategory, setRunnerCategory] = useState<string>(() => getRunnerCategory());
+  const [showNamePrompt, setShowNamePrompt] = useState<boolean>(
+    () => !getRunnerName() || !getRunnerCategory()
+  );
   const [nameDraft, setNameDraft] = useState<string>(() => getRunnerName());
+  const [categoryDraft, setCategoryDraft] = useState<string>(() => getRunnerCategory());
 
   // Fin del recorrido: se reconoce solo cuando pasó todos los puntos y volvió
   // al inicio (o llegó a la meta, en los senderos que la tienen).
@@ -180,7 +185,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const [finishSeconds, setFinishSeconds] = useState(0);
   const [finishDistance, setFinishDistance] = useState(0);
   const [finishWeather, setFinishWeather] = useState('Soleado');
-  const [finishCategory, setFinishCategory] = useState('');
+  const [finishCategory, setFinishCategory] = useState<string>(() => getRunnerCategory());
   const [finishComments, setFinishComments] = useState('');
   const [markStatus, setMarkStatus] = useState<'idle' | 'enviando' | 'enviado' | 'en_cola'>('idle');
   const [markName, setMarkName] = useState<string>(() => getRunnerName());
@@ -556,6 +561,20 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     }
   };
 
+  // Guarda el nombre y la categoría que se piden al entrar al mapa.
+  const confirmRunnerData = () => {
+    const name = nameDraft.trim();
+    if (!name || !categoryDraft) return;
+    triggerVibrate(50);
+    saveRunnerName(name);
+    saveRunnerCategory(categoryDraft);
+    setRunnerName(name);
+    setRunnerCategory(categoryDraft);
+    setMarkName(name);
+    setFinishCategory(categoryDraft);
+    setShowNamePrompt(false);
+  };
+
   // Se terminó el recorrido: se congela el cronómetro y aparece la tarjeta
   // para cargar el tiempo en el ranking.
   const markFinished = () => {
@@ -570,6 +589,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     setMapExpanded(false);
     setCheckpointMessage(null);
     setMarkName(runnerName || getRunnerName());
+    setFinishCategory(prev => prev || runnerCategory || getRunnerCategory());
     triggerVibrate([150, 80, 150, 80, 250]);
     saveRecordedRoute();
   };
@@ -809,7 +829,9 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     setMarkError(null);
     setMarkStatus('enviando');
     saveRunnerName(name);
+    saveRunnerCategory(finishCategory);
     setRunnerName(name);
+    setRunnerCategory(finishCategory);
 
     const info = startInfoRef.current;
     const today = new Date();
@@ -1382,7 +1404,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
         </div>
       )}
 
-      {/* Pedido de nombre: una sola vez, al entrar al mapa. */}
+      {/* Pedido de nombre y categoría: una sola vez, al entrar al mapa. */}
       {showNamePrompt && (
         <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5 space-y-4 animate-in zoom-in-95">
@@ -1391,27 +1413,47 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                 <User className="w-5 h-5" />
               </span>
               <div>
-                <h3 className="font-display font-extrabold text-base text-gray-900">¿Cómo te llamás?</h3>
+                <h3 className="font-display font-extrabold text-base text-gray-900">Tus datos para la tabla</h3>
                 <p className="text-[11px] text-gray-500 leading-snug">
-                  Se usa para cargar tu tiempo en el ranking. Queda guardado en
-                  este teléfono, no se pide de nuevo.
+                  Los usamos para cargar tu tiempo en el ranking. Quedan guardados
+                  en este teléfono: no te los volvemos a pedir.
                 </p>
               </div>
             </div>
-            <input
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              placeholder="Ej: Juan Pérez o Senderista2024"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && nameDraft.trim()) {
-                  saveRunnerName(nameDraft);
-                  setRunnerName(nameDraft.trim());
-                  setMarkName(nameDraft.trim());
-                  setShowNamePrompt(false);
-                }
-              }}
-            />
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  Nombre o apodo
+                </span>
+                <input
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  placeholder="Ej: Juan Pérez o Senderista2024"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmRunnerData();
+                  }}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  Categoría deportiva
+                </span>
+                <select
+                  value={categoryDraft}
+                  onChange={(e) => setCategoryDraft(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">Elegí tu categoría…</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={() => setShowNamePrompt(false)}
@@ -1420,15 +1462,8 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                 Ahora no
               </button>
               <button
-                onClick={() => {
-                  if (!nameDraft.trim()) return;
-                  triggerVibrate(50);
-                  saveRunnerName(nameDraft);
-                  setRunnerName(nameDraft.trim());
-                  setMarkName(nameDraft.trim());
-                  setShowNamePrompt(false);
-                }}
-                disabled={!nameDraft.trim()}
+                onClick={confirmRunnerData}
+                disabled={!nameDraft.trim() || !categoryDraft}
                 className="flex-1 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl disabled:opacity-50"
               >
                 Guardar

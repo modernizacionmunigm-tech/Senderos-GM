@@ -18,7 +18,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { TRAILS, CATEGORIES, GOOGLE_FORM_CONFIG } from '../data';
-import { buildComments, formatSeconds, minutosValue, segundosValue, tienePreguntaDeSegundos } from '../corredor';
+import { buildComments, formatSeconds, minutosValue, segundosValue, tienePreguntaDeSegundos, getRunnerName, getRunnerCategory, saveRunnerName, saveRunnerCategory } from '../corredor';
 
 interface TimeFormProps {
   onTimeAdded: () => void;
@@ -28,7 +28,7 @@ interface TimeFormProps {
 
 export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: TimeFormProps) {
   // Local form state representing ALL Google Form variables
-  const [nombre, setNombre] = useState('');
+  const [nombre, setNombre] = useState(() => getRunnerName());
   const [sendero, setSendero] = useState('Monte Mitre - Dificultad Baja');
   const [tiempoMinutos, setTiempoMinutos] = useState<number>(30);
   const [tiempoSegundos, setTiempoSegundos] = useState<number>(0);
@@ -40,7 +40,7 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
   
   // Categoría deportiva: se usa para la tabla y viaja anotada en los
   // comentarios (la planilla no tiene una columna propia para esto).
-  const [categoria, setCategoria] = useState(CATEGORIES[1]); // Default to 'Adulto (18 - 39)'
+  const [categoria, setCategoria] = useState(() => getRunnerCategory() || CATEGORIES[1]);
 
   // Date and hour starts state
   const [fecha, setFecha] = useState(() => {
@@ -118,6 +118,10 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
       // 1. Instantly register in our localStorage database for immediate local display
       const cleanTime = getFormattedTimeForLocalList();
       const cleanDate = getFormattedDateToDisplay(fecha);
+
+      // Lo que cargó queda guardado para el próximo recorrido.
+      saveRunnerName(nombre.trim());
+      saveRunnerCategory(categoria);
 
       const localUserRuns = JSON.parse(localStorage.getItem('saved_user_ranks') || '[]');
       const newRun = {

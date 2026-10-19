@@ -38,6 +38,25 @@ export function saveRunnerName(name: string) {
   }
 }
 
+/** Categoría deportiva, para no pedirla en cada recorrido. */
+export const RUNNER_CATEGORY_KEY = 'senderos_runner_category';
+
+export function getRunnerCategory(): string {
+  try {
+    return (localStorage.getItem(RUNNER_CATEGORY_KEY) || '').trim();
+  } catch {
+    return '';
+  }
+}
+
+export function saveRunnerCategory(category: string) {
+  try {
+    localStorage.setItem(RUNNER_CATEGORY_KEY, category.trim());
+  } catch {
+    /* si el navegador no deja guardar, no pasa nada */
+  }
+}
+
 /** Segundos -> "HH:MM:SS", que es el formato que entiende la tabla. */
 export function formatSeconds(secs: number): string {
   const total = Math.max(0, Math.round(secs));
