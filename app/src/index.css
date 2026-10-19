@@ -56,3 +56,66 @@
 .custom-leaflet-popup .leaflet-popup-tip {
   background: #ffffff;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Modo alto contraste ("modo sol")
+   Se activa con el botón del encabezado y deja el sitio con
+   fondo blanco, textos oscuros y bordes marcados, para leerlo
+   con el celular a pleno sol. Se guarda en localStorage.
+   ───────────────────────────────────────────────────────────── */
+[data-contrast='high'] body {
+  background-color: #ffffff;
+}
+
+[data-contrast='high'] .text-gray-300,
+[data-contrast='high'] .text-gray-400,
+[data-contrast='high'] .text-gray-500,
+[data-contrast='high'] .text-gray-600,
+[data-contrast='high'] .text-gray-700,
+[data-contrast='high'] .text-slate-400,
+[data-contrast='high'] .text-slate-500 {
+  color: #111827 !important;
+}
+
+[data-contrast='high'] .text-blue-100,
+[data-contrast='high'] .text-blue-100\/90 {
+  color: #ffffff !important;
+}
+
+[data-contrast='high'] .border-gray-100,
+[data-contrast='high'] .border-gray-200,
+[data-contrast='high'] .border-gray-300 {
+  border-color: #374151 !important;
+}
+
+[data-contrast='high'] .bg-gray-50,
+[data-contrast='high'] .bg-gray-100,
+[data-contrast='high'] .bg-brand-light {
+  background-color: #ffffff !important;
+}
+
+[data-contrast='high'] .shadow-xs,
+[data-contrast='high'] .shadow-sm,
+[data-contrast='high'] .shadow-md,
+[data-contrast='high'] .shadow-lg {
+  box-shadow: 0 0 0 1px #6b7280 !important;
+}
+
+[data-contrast='high'] .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+[data-contrast='high'] .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #6b7280 !important;
+}
+
+/* Los bloques oscuros (hero, pie, menú, avisos) conservan su texto claro:
+   ahí el problema no es el contraste, y oscurecerlo lo empeoraría. */
+[data-contrast='high'] .hc-dark :where(
+  .text-gray-300,
+  .text-gray-400,
+  .text-gray-500,
+  .text-gray-600,
+  .text-gray-700,
+  .text-slate-400,
+  .text-slate-500
+) {
+  color: #f1f5f9 !important;
+}

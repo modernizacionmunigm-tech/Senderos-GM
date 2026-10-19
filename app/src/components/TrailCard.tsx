@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { MapPin, Navigation, Clock, Activity, ChevronRight, X, Info, Trophy } from 'lucide-react';
 import { Trail } from '../types';
-import TrailMiniMap from './TrailMiniMap';
+// El mini-mapa trae Leaflet: se carga sólo cuando aparece la tarjeta.
+const TrailMiniMap = lazy(() => import('./TrailMiniMap'));
 
 interface TrailCardProps {
   key?: string;
@@ -60,7 +61,9 @@ export default function TrailCard({ trail, onViewOnMap, onRegisterTime }: TrailC
           
           {/* Interactive Live Leaflet Map */}
           <div className="mt-4">
-            <TrailMiniMap trail={trail} />
+            <Suspense fallback={<div className="h-44 rounded-xl bg-gray-100 animate-pulse" />}>
+              <TrailMiniMap trail={trail} />
+            </Suspense>
           </div>
           
           {/* Senders metrics list */}
@@ -134,7 +137,7 @@ export default function TrailCard({ trail, onViewOnMap, onRegisterTime }: TrailC
                     Sendero Guardia Mitre
                   </span>
                   <div className="text-white/85 text-xs font-semibold">
-                    {trail.difficulty === 'baja' ? 'DIFICULTAD BAJA' : 'DIFICULTAD ALTA'}
+                    {trail.difficulty === 'baja' ? 'DIFICULTAD BAJA' : trail.difficulty === 'media' ? 'DIFICULTAD MEDIA' : 'DIFICULTAD ALTA'}
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold font-display tracking-tight leading-tight">{trail.name}</h2>
@@ -151,9 +154,11 @@ export default function TrailCard({ trail, onViewOnMap, onRegisterTime }: TrailC
 
               {/* Data Grid with colors matched dynamically to Difficulty */}
               <div className={`grid grid-cols-3 gap-2 py-3 border rounded-xl px-4 text-center ${
-                trail.difficulty === 'baja' 
-                  ? 'bg-emerald-50/40 border-emerald-600/10 text-emerald-950' 
-                  : 'bg-red-50/40 border-red-600/10 text-red-950'
+                trail.difficulty === 'baja'
+                  ? 'bg-emerald-50/40 border-emerald-600/10 text-emerald-950'
+                  : trail.difficulty === 'media'
+                    ? 'bg-amber-50/40 border-amber-600/10 text-amber-950'
+                    : 'bg-red-50/40 border-red-600/10 text-red-950'
               }`}>
                 <div>
                   <span className="text-[10px] opacity-70 font-semibold uppercase block">Distancia</span>
@@ -172,19 +177,29 @@ export default function TrailCard({ trail, onViewOnMap, onRegisterTime }: TrailC
               {/* Points of Interest list */}
               <div>
                 <div className="flex items-center gap-1.5 border-b border-gray-100 pb-2">
-                  <MapPin className={`w-4 h-4 ${trail.difficulty === 'baja' ? 'text-emerald-600' : 'text-red-500'}`} />
+                  <MapPin className={`w-4 h-4 ${
+                    trail.difficulty === 'baja' ? 'text-emerald-600' : trail.difficulty === 'media' ? 'text-amber-500' : 'text-red-500'
+                  }`} />
                   <h4 className="font-bold text-sm text-gray-800 font-display">Puntos de Interés / Paradas QR</h4>
                 </div>
                 
                 <ul className="space-y-4 mt-3">
-                  {trail.pointsOfInterest.map((poi, idx) => (
+                  {trail.pointsOfInterest.map((poi, idx) => {
+                    // El inicio y la meta no consumen número: el 1 es el primer hito.
+                    const poiNumber = trail.pointsOfInterest
+                      .slice(0, idx + 1)
+                      .filter((p) => p.type !== 'inicio' && p.type !== 'fin').length;
+
+                    return (
                     <li key={idx} className="flex items-start gap-3 text-xs">
                       <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 ${
-                        trail.difficulty === 'baja' 
-                          ? 'bg-emerald-100 text-emerald-700' 
-                          : 'bg-red-100 text-red-700'
+                        trail.difficulty === 'baja'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : trail.difficulty === 'media'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-red-100 text-red-700'
                       }`}>
-                        {idx + 1}
+                        {poi.type === 'inicio' ? '▶' : poi.type === 'fin' ? '■' : poiNumber}
                       </span>
                       <div className="flex-1">
                         <div className="flex items-center gap-1.5">
@@ -196,7 +211,8 @@ export default function TrailCard({ trail, onViewOnMap, onRegisterTime }: TrailC
                         <p className="text-gray-500 mt-1">{poi.description}</p>
                       </div>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
 

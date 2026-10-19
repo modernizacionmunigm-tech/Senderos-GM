@@ -60,11 +60,8 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
   // Synchronize preselectedTrailId if it changes
   useEffect(() => {
     if (preselectedTrailId) {
-      if (preselectedTrailId === 'monte-mitre-baja' || preselectedTrailId === 'Monte Mitre - Dificultad Baja') {
-        setSendero('Monte Mitre - Dificultad Baja');
-      } else if (preselectedTrailId === 'monte-mitre-alta' || preselectedTrailId === 'Monte Mitre - Dificultad Alta') {
-        setSendero('Monte Mitre - Dificultad Alta');
-      }
+      const trail = TRAILS.find(t => t.id === preselectedTrailId || t.name === preselectedTrailId);
+      if (trail) setSendero(trail.name);
     }
   }, [preselectedTrailId]);
 
@@ -166,7 +163,7 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
             </p>
           </div>
           
-          <div className="p-4 bg-zinc-950 text-white rounded-2xl text-[11px] font-mono leading-relaxed text-left w-full max-w-xs space-y-1 shadow-md border border-zinc-900">
+          <div className="hc-dark p-4 bg-zinc-950 text-white rounded-2xl text-[11px] font-mono leading-relaxed text-left w-full max-w-xs space-y-1 shadow-md border border-zinc-900">
             <p className="text-amber-400 font-extrabold uppercase tracking-wider text-[9px] mb-1">DETALLE DE MARCA VALIDADA</p>
             <p><span className="text-zinc-500">CORREDOR:</span> {nombre}</p>
             <p><span className="text-zinc-500">SENDERO:</span> {sendero}</p>
@@ -274,8 +271,9 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                   required
                   className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-gray-800"
                 >
-                  <option value="Monte Mitre - Dificultad Baja">Monte Mitre - Dificultad Baja</option>
-                  <option value="Monte Mitre - Dificultad Alta">Monte Mitre - Dificultad Alta</option>
+                  {TRAILS.map(t => (
+                    <option key={t.id} value={t.name}>{t.name}</option>
+                  ))}
                 </select>
               </div>
 

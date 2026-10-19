@@ -77,7 +77,7 @@ export default function PWAInstallBanner() {
   if (!showBanner) return null;
 
   return (
-    <div id="pwa-install-banner" className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md bg-zinc-900 border border-zinc-800 text-white p-4 rounded-xl shadow-2xl z-50 flex items-start gap-3.5 animate-bounce-short">
+    <div id="pwa-install-banner" className="hc-dark fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md bg-zinc-900 border border-zinc-800 text-white p-4 rounded-xl shadow-2xl z-50 flex items-start gap-3.5 animate-bounce-short">
       <div className="p-2.5 bg-brand-600 rounded-lg text-white mt-1 shrink-0">
         <Smartphone className="w-5 h-5" />
       </div>
@@ -85,12 +85,14 @@ export default function PWAInstallBanner() {
       <div className="flex-1">
         <div className="flex items-center gap-1.5">
           <h4 className="font-bold text-sm text-zinc-100 font-display">Instalar Senderos GM</h4>
-          <span className="px-1.5 py-0.5 bg-brand-600/20 text-brand-200 text-[10px] font-semibold tracking-wider uppercase rounded-full">offline</span>
         </div>
         <p className="text-xs text-zinc-300 mt-1">
-          {isIOS 
-            ? 'Accede más rápido como una aplicación móvil nativa. Toca Compartir y selecciona Agregar a Inicio.' 
-            : 'Guarda mapas de senderos de Guardia Mitre offline, navega con GPS sin señal y registra tus tiempos.'}
+          {isIOS
+            ? 'Accedé más rápido desde la pantalla de inicio. Tocá Compartir y elegí "Agregar a Inicio".'
+            : 'Accedé más rápido desde la pantalla de inicio, como una app: se abre en un toque y no tenés que buscar la dirección.'}
+        </p>
+        <p className="text-[11px] text-zinc-400 mt-2">
+          Mirá el mapa antes de salir: una vez en el monte puede no haber señal.
         </p>
         
         <div className="flex items-center gap-2 mt-3.5">
@@ -100,7 +102,7 @@ export default function PWAInstallBanner() {
             className="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-500 rounded-lg text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
           >
             <Download className="w-3.5 h-3.5" />
-            {isIOS ? 'Cómo de Instalar' : 'Instalar ahora'}
+            {isIOS ? 'Cómo instalar' : 'Instalar ahora'}
           </button>
           
           <button

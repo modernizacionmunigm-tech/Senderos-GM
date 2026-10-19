@@ -2,7 +2,7 @@
 @license
 SPDX-License-Identifier: Apache-2.0
 */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import {
   Compass,
   Map,
@@ -26,11 +26,13 @@ import Header from './components/Header';
 import WeatherWidget from './components/WeatherWidget';
 import PWAInstallBanner from './components/PWAInstallBanner';
 import TrailCard from './components/TrailCard';
-import MapModule from './components/MapModule';
 import TimeForm from './components/TimeForm';
 import RankingTable from './components/RankingTable';
-import FloraGuide from './components/FloraGuide';
 import AboutProject from './components/AboutProject';
+// Mapa y guía de flora se cargan aparte (code splitting): Leaflet pesa y no
+// hace falta hasta que el usuario entra a esas secciones.
+const MapModule = lazy(() => import('./components/MapModule'));
+const FloraGuide = lazy(() => import('./components/FloraGuide'));
 import logoSenderos from './assets/images/logo-senderos-wt.png';
 
 import { TRAILS } from './data';
@@ -44,6 +46,19 @@ export default function App() {
   
   // Highlighting specific trail on map
   const [selectedTrailId, setSelectedTrailId] = useState<string | null>(null);
+
+  // Deep link de QR de cartelería: ?sendero=baja|media|alta (o el id completo)
+  // abre el mapa con ese sendero ya elegido. Ej: .../Senderos-GM/?sendero=alta
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const raw = (params.get('sendero') || '').trim().toLowerCase();
+    if (!raw) return;
+    const found = TRAILS.find(t => t.id === raw || t.id.endsWith(`-${raw}`));
+    if (found) {
+      setSelectedTrailId(found.id);
+      setActiveTab('mapa');
+    }
+  }, []);
   
   // Tracking trail registration state
   const [registeringTrailId, setRegisteringTrailId] = useState<string | null>(null);
@@ -118,7 +133,7 @@ export default function App() {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
             
             {/* Scenic Welcome Card Section */}
-            <div className="relative bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-3xl overflow-hidden shadow-sm border border-blue-900/40">
+            <div className="hc-dark relative bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-3xl overflow-hidden shadow-sm border border-blue-900/40">
               
               {/* Pattern Background details */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(56,189,248,0.15),transparent_60%)] z-0"></div>
@@ -206,7 +221,7 @@ export default function App() {
                 <div className="p-3 bg-blue-100 text-blue-700 rounded-xl group-hover:scale-105 transition-transform">
                   <Compass className="w-5 h-5" />
                 </div>
-                <span className="text-xs font-bold text-gray-700 font-display">2 Senderos Activos</span>
+                <span className="text-xs font-bold text-gray-700 font-display">3 Senderos Activos</span>
               </button>
 
               <button
@@ -258,7 +273,7 @@ export default function App() {
             <div className="space-y-3.5">
               <h3 className="font-extrabold text-base tracking-tight text-gray-800 font-display">Senderos Destacados</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {TRAILS.slice(0, 2).map(t => (
+                {TRAILS.map(t => (
                   <TrailCard key={t.id} trail={t} onViewOnMap={handleSelectTrailOnMap} />
                 ))}
               </div>
@@ -274,7 +289,7 @@ export default function App() {
               <div>
                 <h2 className="text-2xl font-extrabold text-gray-800 font-display">Explorador de Senderos Guardia Mitre</h2>
                 <p className="text-xs text-gray-500 mt-1">
-                  Conoce los desniveles, distancias y puntos emblemáticos de las 2 rutas activas habilitadas por el consorcio de turismo.
+                  Conoce los desniveles, distancias y puntos emblemáticos de las 3 rutas activas habilitadas por el consorcio de turismo.
                 </p>
               </div>
               
@@ -334,18 +349,22 @@ export default function App() {
               </button>
             </div>
             
-            <MapModule 
-              selectedTrailId={selectedTrailId} 
-              onSelectTrail={setSelectedTrailId} 
-              initialSimpleMode={mapSimpleMode}
-            />
+            <Suspense fallback={<div className="h-[450px] rounded-2xl bg-gray-100 animate-pulse" />}>
+              <MapModule 
+                selectedTrailId={selectedTrailId} 
+                onSelectTrail={setSelectedTrailId} 
+                initialSimpleMode={mapSimpleMode}
+              />
+            </Suspense>
           </div>
         )}
 
         {/* VIEW 3-B: BIODIVERSIDAD (FLORA & FAUNA) */}
         {activeTab === 'biodiversidad' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
-            <FloraGuide />
+            <Suspense fallback={<div className="h-64 rounded-2xl bg-gray-100 animate-pulse" />}>
+              <FloraGuide />
+            </Suspense>
           </div>
         )}
 
@@ -380,7 +399,7 @@ export default function App() {
       </main>
 
       {/* Combined Institutional Footer */}
-      <footer id="app-footer" className="bg-slate-900 text-white pt-8 pb-6 mt-12 text-xs">
+      <footer id="app-footer" className="hc-dark bg-slate-900 text-white pt-8 pb-6 mt-12 text-xs">
         <div className="max-w-6xl mx-auto px-4">
           
           {/* Navegación Principal */}

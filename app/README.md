@@ -51,8 +51,7 @@ Aplicación web interactiva para el registro y seguimiento de senderos turístic
 
 ### 📱 **Progressive Web App (PWA)**
 - Instalable en dispositivos móviles
-- Funcionamiento offline parcial
-- Notificaciones push configurables
+- Se abre desde la pantalla de inicio como una app
 - Diseño 100% responsive
 
 ###  **Seguridad**

@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Menu, X, Home, Map, Trophy, Compass, Clock, Leaf, Info } from 'lucide-react';
+import { Menu, X, Home, Map, Trophy, Compass, Clock, Leaf, Info, Contrast } from 'lucide-react';
 import { GMLogo } from './Logos';
 
 interface HeaderProps {
@@ -14,6 +14,16 @@ interface HeaderProps {
 
 export default function Header({ activeTab, onSelectTab }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
+  // Modo alto contraste (pensado para leer a pleno sol en el monte)
+  const [highContrast, setHighContrast] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('high_contrast') === 'true';
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.contrast = highContrast ? 'high' : 'normal';
+    localStorage.setItem('high_contrast', String(highContrast));
+  }, [highContrast]);
 
   // Control body scroll lock when open vs closed
   useEffect(() => {
@@ -79,15 +89,33 @@ export default function Header({ activeTab, onSelectTab }: HeaderProps) {
             </div>
           </div>
 
-          {/* Hamburger Menu Trigger for Mobile */}
-          <button
-            id="btn-hamburger-toggle"
-            onClick={toggleMenu}
-            className="md:hidden p-2 text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
-            aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Contraste alto + Hamburger */}
+          <div className="flex items-center gap-1">
+            <button
+              id="btn-high-contrast"
+              onClick={() => {
+                triggerVibrate();
+                setHighContrast(v => !v);
+              }}
+              className={`p-2 rounded-xl transition-all cursor-pointer ${
+                highContrast ? 'bg-white text-[#1e3a8a]' : 'text-white hover:bg-white/10'
+              }`}
+              aria-pressed={highContrast}
+              title={highContrast ? 'Desactivar alto contraste' : 'Activar alto contraste (sol)'}
+            >
+              <Contrast className="w-6 h-6" />
+            </button>
+
+            {/* Hamburger Menu Trigger for Mobile */}
+            <button
+              id="btn-hamburger-toggle"
+              onClick={toggleMenu}
+              className="md:hidden p-2 text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+              aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Horizontal Navigation Row for Desktop (always visible on md+) or horizontal swiper on mobile */}
@@ -148,7 +176,7 @@ export default function Header({ activeTab, onSelectTab }: HeaderProps) {
 
       <div 
         id="hamburger-slider"
-        className={`fixed top-0 bottom-0 right-0 w-[270px] bg-[#1e3a8a] text-white shadow-2xl z-50 md:hidden transition-transform duration-300 flex flex-col justify-between ${
+        className={`hc-dark fixed top-0 bottom-0 right-0 w-[270px] bg-[#1e3a8a] text-white shadow-2xl z-50 md:hidden transition-transform duration-300 flex flex-col justify-between ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
