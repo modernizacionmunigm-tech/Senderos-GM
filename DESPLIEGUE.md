@@ -46,8 +46,13 @@ Qué hace el script, en orden:
 4. Commit + `push origin main`
 5. Borra `_publicado\`
 
-Después, GitHub Pages tarda **un minuto** en mostrar los cambios. Refrescá con
-`Ctrl + F5` (fuerza recarga, sino el navegador te muestra lo viejo).
+El push a `main` dispara el workflow **"Publicar en GitHub Pages"**
+(`.github\workflows\pages.yml`). Se ve correr en la pestaña **Actions** del repo
+y tarda **uno o dos minutos**. Cuando termina, refrescá con `Ctrl + F5` (fuerza
+recarga, sino el navegador te muestra lo viejo).
+
+Si el workflow falla, el sitio **sigue mostrando la publicación anterior**: no
+queda en blanco. El error se lee en la pestaña Actions.
 
 ## Si lo tenés que hacer a mano
 
@@ -118,18 +123,40 @@ Eso deshace **la última publicación**. Para deshacer dos, repetí el `revert`
 - ❌ **Nunca** editar los archivos de `main` a mano (ni por la web de GitHub):
   el próximo `publicar.ps1` te los pisa y perdés el cambio.
 - ❌ **Nunca** subir `app\src\` a `main`.
+- ❌ No borrar de `main` estos dos archivos: son los que hacen que Pages
+  publique. `publicar.ps1` no los toca.
+  - `.nojekyll` (evita que Pages procese el sitio con Jekyll)
+  - `.github\workflows\pages.yml` (el workflow de publicación)
 - ❌ No cambiar `base: '/Senderos-GM/'` en `vite.config.ts`: es a propósito,
   porque GitHub Pages sirve el sitio en un subdirectorio.
 
-## Estado (al 18/10/2026)
+## Estado (al 19/10/2026)
 
 | Cosa | Valor |
 |---|---|
 | Sitio en vivo | https://modernizacionmunigm-tech.github.io/Senderos-GM/ |
-| Rama `main` (publicado) | `1f36192 Update README.md` — no se toca desde el 18/10 |
+| Rama `main` (publicado) | `9708c67` — tres senderos reales, GPS, brújula y alto contraste (19/10/2026) |
 | Rama `source` (proyecto) | el proyecto completo, con el código en `app\`. Para ver el último: `git log --oneline -1` |
-| ¿Hay algo sin publicar? | **No.** El build actual es byte por byte idéntico a lo publicado |
+| ¿Hay algo sin publicar? | **No** (al 19/10/2026) |
 | Repo viejo `SenderosGuardiaMitre` | Ya no se publica (su URL da 404). Es archivo, está en `web-vieja\` |
+
+### Por qué se publica con GitHub Actions (19/10/2026)
+
+Hasta junio, Pages reconstruía el sitio solo con cada push a `main`
+("Deploy from a branch"). El 19/10 esa publicación automática **dejó de
+reconstruir**: el push llegaba bien, pero el sitio seguía sirviendo el build
+viejo más de 20 minutos y no aparecía ningún build nuevo.
+
+La salida fue pasar a **GitHub Actions**, que además deja log de cada
+publicación:
+
+| Archivo en `main` | Para qué |
+|---|---|
+| `.github\workflows\pages.yml` | Baja `main` y lo publica tal cual. No compila nada: el build ya lo hizo `publicar.ps1` |
+| `.nojekyll` | Evita que Pages procese el sitio con Jekyll |
+
+Para republicar a mano (sin tocar archivos): pestaña **Actions** →
+"Publicar en GitHub Pages" → **Run workflow**.
 
 ### Cómo se llegó a esta estructura (18/10/2026)
 

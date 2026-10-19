@@ -1,0 +1,47 @@
+# Publica en GitHub Pages el contenido de la rama `main`.
+#
+# La rama `main` ya trae el build hecho (index.html + assets/), así que acá no
+# se compila nada: se sube tal cual. El build lo sigue haciendo `publicar.ps1`
+# desde `source`.
+#
+# Este archivo existe porque la publicación automática "desde una rama" dejó de
+# reconstruir el sitio. Con Actions, cada push a `main` queda con su log y se
+# puede volver a correr a mano desde la pestaña Actions.
+
+name: Publicar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Bajar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Empaquetar el sitio
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
