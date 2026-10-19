@@ -140,6 +140,7 @@ export default function RankingTable({ refreshTrigger }: RankingTableProps) {
       let dateIdx = headers.findIndex(h => h.includes('fecha') && h.includes('recorrido'));
       let hourIdx = headers.findIndex(h => h.includes('hora') && h.includes('inicio'));
       let categoryIdx = headers.findIndex(h => h.includes('categor'));
+      let commentsIdx = headers.findIndex(h => h.includes('coment'));
 
       // Fallback indices
       if (timestampIdx === -1) timestampIdx = 0;
@@ -192,6 +193,15 @@ export default function RankingTable({ refreshTrigger }: RankingTableProps) {
           category = 'MONTE';
         }
 
+        // La planilla no tiene columna de categoría: el cronómetro (y el
+        // formulario manual) la dejan anotada en los comentarios.
+        if (commentsIdx !== -1) {
+          const anotada = (columns[commentsIdx] || '').match(/Categor[íi]a:\s*([^.]*)/i);
+          if (anotada && anotada[1].trim()) {
+            category = anotada[1].trim();
+          }
+        }
+
         results.push({
           id: `sheet_row_${i}_${Date.now()}`,
           name: nameValue.trim(),
@@ -225,12 +235,14 @@ export default function RankingTable({ refreshTrigger }: RankingTableProps) {
     const sheetUniqueKeys = new Set(sheetRecords.map(markKey));
 
     // Una marca del cronómetro se ve primero local y después aparece en la
-    // planilla: cuando ya está en la planilla, no la mostramos dos veces.
-    const localOnly = localUserRuns.filter((run) => !sheetUniqueKeys.has(markKey(run)));
+    // planilla: cuando ya está en la planilla mostramos la local (que trae la
+    // categoría y el "Tú"), así no se duplica ni pierde el dato.
+    const localKeys = new Set(localUserRuns.map(markKey));
+    const sheetOnly = sheetRecords.filter((row) => !localKeys.has(markKey(row)));
 
     const filteredBaseline = INITIAL_RANKINGS.filter(mock => !sheetUniqueKeys.has(markKey(mock)));
 
-    const combined = [...localOnly, ...sheetRecords, ...filteredBaseline];
+    const combined = [...localUserRuns, ...sheetOnly, ...filteredBaseline];
     setRecords(combined);
   }, [refreshTrigger, sheetRecords]);
 

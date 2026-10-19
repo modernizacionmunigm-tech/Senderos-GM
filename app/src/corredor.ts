@@ -65,6 +65,8 @@ export interface MarkPayload {
   /** "HH:MM" de cuando se apretó grabar. */
   startTime: string;
   weather: string;
+  /** Categoría deportiva (Junior, Adulto, Master A, Master B). */
+  category?: string;
   comments?: string;
 }
 
@@ -73,13 +75,25 @@ interface QueuedMark extends MarkPayload {
   createdAt: number;
 }
 
+/**
+ * Los comentarios que van a la planilla. El tiempo exacto y la categoría se
+ * anotan ahí con una etiqueta legible: así no se pierden (la planilla no tiene
+ * columnas propias para eso) y la tabla puede leerlos.
+ */
+export function buildComments(opts: { seconds?: number; category?: string; userComment?: string }): string {
+  const parts: string[] = [];
+  if (opts.seconds) parts.push(`Tiempo exacto: ${formatSeconds(opts.seconds)} (cronómetro GPS).`);
+  if (opts.category) parts.push(`Categoría: ${opts.category}.`);
+  if (opts.userComment && opts.userComment.trim()) parts.push(opts.userComment.trim());
+  return parts.join(' ');
+}
+
 /** La categoría no la pregunta el formulario: se deduce del sendero. */
 function categoryForTrail(trailName: string): string {
   const lower = trailName.toLowerCase();
   if (lower.includes('alta')) return 'MONTE';
   return 'GENERAL';
 }
-
 function dateForTable(dateISO: string): string {
   const [y, m, d] = (dateISO || '').split('-');
   return y && m && d ? `${d}/${m}/${y}` : new Date().toLocaleDateString('es-AR');
@@ -103,13 +117,17 @@ function buildBody(payload: MarkPayload): URLSearchParams {
   body.set(entries.clima, payload.weather);
   body.set(
     entries.comentarios,
-    [
-      `Tiempo exacto: ${formatSeconds(payload.seconds)} (cronómetro GPS).`,
-      payload.comments,
-    ]
-      .filter(Boolean)
-      .join(' ')
+    buildComments({
+      seconds: payload.seconds,
+      category: payload.category,
+      userComment: payload.comments,
+    })
   );
+  // Si el formulario ya tiene la pregunta de categoría, va como campo propio;
+  // si no, va dentro de los comentarios (ver buildComments).
+  if (entries.categoria && payload.category) {
+    body.set(entries.categoria, payload.category);
+  }
   body.set(entries.terminos, 'Acepto');
   return body;
 }
@@ -206,7 +224,7 @@ function saveLocalRank(payload: MarkPayload) {
     const record = {
       id: `local_${Date.now()}`,
       name: payload.name,
-      category: categoryForTrail(payload.trailName),
+      category: payload.category || categoryForTrail(payload.trailName),
       time,
       trailName: payload.trailName,
       date,

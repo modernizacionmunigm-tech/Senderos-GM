@@ -18,6 +18,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { TRAILS, CATEGORIES, GOOGLE_FORM_CONFIG } from '../data';
+import { buildComments } from '../corredor';
 
 interface TimeFormProps {
   onTimeAdded: () => void;
@@ -34,7 +35,8 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
   const [comentarios, setComentarios] = useState('');
   const [terminosAceptados, setTerminosAceptados] = useState(true);
   
-  // Sports category (kept for beautiful local ranking styling metadata!)
+  // Categoría deportiva: se usa para la tabla y viaja anotada en los
+  // comentarios (la planilla no tiene una columna propia para esto).
   const [categoria, setCategoria] = useState(CATEGORIES[1]); // Default to 'Adulto (18 - 39)'
 
   // Date and hour starts state
@@ -236,6 +238,16 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
             <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.fechaDay} value={fechaDay} />
             <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.horaHour} value={horaHour} />
             <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.horaMinute} value={horaMinute} />
+            {/* La planilla no tiene columna de categoría: va anotada en los
+                comentarios, igual que cuando la carga el cronómetro del mapa. */}
+            <input
+              type="hidden"
+              name={GOOGLE_FORM_CONFIG.entries.comentarios}
+              value={buildComments({ category: categoria, userComment: comentarios })}
+            />
+            {GOOGLE_FORM_CONFIG.entries.categoria && (
+              <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.categoria} value={categoria} />
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
@@ -350,11 +362,11 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 </select>
               </div>
 
-              {/* Deporte Categoria dropdown (Local Metadata only, highly visual for locals!) */}
+              {/* Deporte Categoria dropdown (se manda anotada en los comentarios) */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                   <Trophy className="w-3.5 h-3.5 text-blue-600" />
-                  Categoría Deportiva (local)
+                  Categoría deportiva
                 </label>
                 <select
                   id="categoria"
@@ -378,7 +390,6 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 </label>
                 <textarea
                   id="comentarios"
-                  name={GOOGLE_FORM_CONFIG.entries.comentarios}
                   value={comentarios}
                   onChange={(e) => setComentarios(e.target.value)}
                   placeholder="Comparte tu experiencia en los senderos..."

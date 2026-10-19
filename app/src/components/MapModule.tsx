@@ -26,7 +26,7 @@ import {
   Send
 } from 'lucide-react';
 import { Trail, PointOfInterest } from '../types';
-import { TRAILS, GUARDIA_MITRE_CENTER } from '../data';
+import { TRAILS, CATEGORIES, GUARDIA_MITRE_CENTER } from '../data';
 import { getRunnerName, saveRunnerName, formatSeconds, submitMark } from '../corredor';
 
 // Helper function to calculate distance using Haversine formula
@@ -180,6 +180,8 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const [finishSeconds, setFinishSeconds] = useState(0);
   const [finishDistance, setFinishDistance] = useState(0);
   const [finishWeather, setFinishWeather] = useState('Soleado');
+  const [finishCategory, setFinishCategory] = useState('');
+  const [finishComments, setFinishComments] = useState('');
   const [markStatus, setMarkStatus] = useState<'idle' | 'enviando' | 'enviado' | 'en_cola'>('idle');
   const [markName, setMarkName] = useState<string>(() => getRunnerName());
   const [markAccepted, setMarkAccepted] = useState(true);
@@ -747,6 +749,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     setFinished(false);
     setMarkStatus('idle');
     setMarkError(null);
+    setFinishComments('');
     lastCheckpointRef.current = -1;
     setLastCheckpointIndex(-1);
     setCheckpointMessage(null);
@@ -798,6 +801,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
       setMarkError('Necesitamos tu visto bueno para publicar el tiempo.');
       return;
     }
+    if (!finishCategory) {
+      setMarkError('Elegí tu categoría deportiva para la tabla.');
+      return;
+    }
 
     setMarkError(null);
     setMarkStatus('enviando');
@@ -817,6 +824,8 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
         info.time ||
         `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`,
       weather: finishWeather,
+      category: finishCategory,
+      comments: finishComments,
     });
 
     setMarkStatus(result);
@@ -1296,25 +1305,56 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                 />
               </div>
 
-              <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-200 mb-1.5">
-                  ¿Cómo estuvo el clima?
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {['Soleado', 'Nublado', 'Ventoso', 'Lluvioso'].map((w) => (
-                    <button
-                      key={w}
-                      onClick={() => { triggerVibrate(20); setFinishWeather(w); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-                        finishWeather === w
-                          ? 'bg-white text-emerald-800 border-white'
-                          : 'bg-white/10 text-white border-white/30'
-                      }`}
-                    >
-                      {w}
-                    </button>
-                  ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+                    Categoría deportiva
+                  </span>
+                  <select
+                    value={finishCategory}
+                    onChange={(e) => { triggerVibrate(20); setFinishCategory(e.target.value); }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-white text-gray-900 text-xs font-semibold focus:outline-none"
+                  >
+                    <option value="">Elegí tu categoría…</option>
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </div>
+
+                <div className="space-y-1.5">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+                    ¿Cómo estuvo el clima?
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Soleado', 'Nublado', 'Ventoso', 'Lluvioso'].map((w) => (
+                      <button
+                        key={w}
+                        onClick={() => { triggerVibrate(20); setFinishWeather(w); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                          finishWeather === w
+                            ? 'bg-white text-emerald-800 border-white'
+                            : 'bg-white/10 text-white border-white/30'
+                        }`}
+                      >
+                        {w}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+                  Comentarios (opcional)
+                </span>
+                <textarea
+                  value={finishComments}
+                  onChange={(e) => setFinishComments(e.target.value)}
+                  rows={2}
+                  placeholder="¿Cómo estuvo el recorrido? ¿Cómo viste el sendero?"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white text-gray-900 text-xs font-medium focus:outline-none resize-none"
+                />
               </div>
 
               <label className="flex items-start gap-2 text-[11px] leading-snug text-emerald-50 selection:bg-transparent">

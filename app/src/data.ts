@@ -330,6 +330,11 @@ export const GOOGLE_FORM_CONFIG = {
     clima: 'entry.1090869712',
     comentarios: 'entry.1586715887',
     terminos: 'entry.871715811',
+    // El formulario todavía no pregunta la categoría deportiva. Mientras esté
+    // vacío, la categoría viaja dentro de "Comentarios" (así no se pierde) y
+    // la tabla la lee de ahí. Si algún día se agrega la pregunta al
+    // formulario, alcanza con pegar acá su "entry.XXXXXXXX".
+    categoria: '',
   }
 };
 
