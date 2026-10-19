@@ -19,6 +19,7 @@ La carpeta del proyecto es el repo **`modernizacionmunigm-tech/Senderos-GM`**
 | `app\` | **El código vivo.** React + Vite + TypeScript |
 | `datos\` | Trazados y planillas del proyecto (CSV, KMZ) |
 | `marca\` | Logos del proyecto |
+| `carteleria\` | Mockups de la cartelería (`mockups.html`, a escala y con el trazado GPS real). El plan y los textos van aparte, en `CARTELERIA.md` |
 | `AGENTS.md` (este), `DESPLIEGUE.md`, `publicar.ps1` | Documentación y script de publicación |
 | `Proyecto Senderos - Monte Mitre - Web app Interactiva.pdf` | El proyecto original |
 | `web-vieja\` | La web anterior, estática. **Ya no se publica**: es archivo. Tiene su propio repo (`SenderosGuardiaMitre`), por eso está ignorada por git |
@@ -41,6 +42,39 @@ Los componentes están en `app/src/components/`:
 | `PWAInstallBanner.tsx` / `WeatherWidget.tsx` | Extras (instalación, clima) |
 
 Los datos están en `app/src/data.ts` (senderos) y `app/src/floraData.ts` (flora).
+
+## Estado actual (oct 2026)
+
+- Los **tres senderos** (baja, media, alta) salen de los KMZ relevados con GPS
+  (`datos/Sendero Baja real.kmz`, `datos/Sendero Alta real.kmz`). Las distancias
+  se calculan sobre el trazado; los desniveles se estiman con modelos digitales
+  de elevación (Copernicus GLO-90 y SRTM 30 m). Ver el comentario en `data.ts`.
+- El mapa tiene **GPS en vivo**, grabación del recorrido, aviso de desvío
+  (>40 m), cronómetro, modo simple y una **brújula** que muestra distancia y
+  rumbo al punto más cercano del sendero elegido.
+- **Modo alto contraste** ("modo sol"): botón en el encabezado; se guarda en el
+  navegador. Los bloques con fondo oscuro llevan la clase `hc-dark` (`hc-` =
+  high contrast) para que no se les oscurezca el texto. Ver `index.css`.
+- **Bundle separado**: `MapModule`, `FloraGuide` y `TrailMiniMap` (que trae
+  Leaflet) se cargan con `React.lazy`. El arranque pasó de ~447 kB a ~295 kB.
+- El mapa y los mini-mapas usan **tiles de OpenStreetMap** (no piden clave).
+  CARTO quedó descartado: ahora exige API key y deja marca de agua.
+- Deep links para los QR de cartelería: `?tab=` y `?sendero=baja|media|alta`
+  (o el id completo) ya funcionan. Falta `?poi=` para abrir un punto puntual.
+- El ranking se alimenta de una **planilla publicada de Google Sheets**
+  (`DEFAULT_GOOGLE_SHEET_CSV_URL` en `data.ts` y en `floraData.ts`).
+
+Pendientes:
+
+- **No hay service worker.** El sitio no queda cacheado para arrancar offline.
+  **Decidido (oct 2026): no se agrega por ahora**, se evalúa más adelante si hace
+  falta. Ya se sacó la promesa de uso sin señal del banner de instalación
+  (`PWAInstallBanner.tsx`); la cartelería tampoco la promete (ver
+  `PEDIDO-WEB-QR.md`).
+- Perfiles de elevación: hoy sólo está el desnivel total, sin gráfico.
+- Compartir el resultado de una marca (y el puesto en la tabla).
+- Cartelería de los senderos: plan y textos en **`CARTELERIA.md`**; el pedido de
+  deep links para los QR, en **`PEDIDO-WEB-QR.md`**.
 
 ## ⚠️ Las dos ramas (LO MÁS IMPORTANTE)
 

@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Senderos Monte Mitre — Sistema de cartelería (propuesta)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111111;
+    --paper:#ffffff;
+    --gris:#6b7280;
+    --linea:#d1d5db;
+    --verde:#10b981;
+    --ambar:#f59e0b;
+    --rojo:#ef4444;
+    --fondo:#ececea;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--fondo); color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.5;
+    padding:40px 24px 100px;
+  }
+  .wrap{max-width:1220px;margin:0 auto}
+  h1,h2,h3,h4{font-family:"Space Grotesk",sans-serif;margin:0}
+  h1{font-size:34px;font-weight:700;letter-spacing:-.5px}
+  h2{font-size:22px;font-weight:600;margin:56px 0 6px;padding-bottom:10px;border-bottom:3px solid var(--ink)}
+  h3{font-size:17px;font-weight:600}
+  p{margin:6px 0}
+  .gris{color:var(--gris)}
+  .chico{font-size:13px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  header.doc{border-bottom:3px solid var(--ink);padding-bottom:18px;margin-bottom:8px}
+  header.doc p{max-width:820px;color:var(--gris)}
+  .fig{margin:22px 0 0}
+  .fig .cap{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:8px}
+  .fig .cap .med{font-family:"Space Grotesk";font-weight:600;font-size:14px}
+  .pza{background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.14),0 8px 24px rgba(0,0,0,.08);display:block}
+  .nota{font-size:13px;color:var(--gris);margin-top:10px;max-width:820px}
+  .fila{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+  .card{background:var(--paper);padding:18px 20px;border-left:3px solid var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:14px}
+  .chip{width:150px}
+  .chip .sw{height:64px;border:1px solid rgba(0,0,0,.10)}
+  .chip .hex{font-family:ui-monospace,monospace;font-size:12.5px;margin-top:6px}
+  .chip .uso{font-size:12.5px;color:var(--gris)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--linea);vertical-align:top}
+  th{font-family:"Space Grotesk";font-weight:600;border-bottom:2px solid var(--ink)}
+  td.num{font-family:ui-monospace,monospace;text-align:right;white-space:nowrap}
+  .ok{color:#047857;font-weight:600}
+  .no{color:#b91c1c;font-weight:600}
+  ul{margin:8px 0 8px 18px;padding:0}
+  li{margin:4px 0}
+  .regla{margin:12px 0}
+  .regla b{font-family:"Space Grotesk"}
+  svg text{font-family:"Inter",sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <h1>Senderos Monte Mitre — Sistema de cartelería</h1>
+  <p>Propuesta de diseño, 19/10/2026. Tres piezas: <b>cartel de la puerta</b>, <b>placa de inicio/meta</b> y
+  <b>placa de punto numerado</b>. El trazado del mapa es el <b>relevado con GPS</b> (no un dibujo):
+  los tres senderos están dibujados desde las mismas coordenadas que usa la app.</p>
+  <p class="chico gris">Tipografía: la misma de la app (Space Grotesk + Inter) · Sistema: Vignelli · Isologo: estilo Rand</p>
+</header>
+
+<!-- ===================== SISTEMA ===================== -->
+<h2>1. El sistema</h2>
+
+<div class="card" style="border-left-color:var(--verde)">
+  <h3>La idea (una sola)</h3>
+  <p class="regla">Cada sendero es <b>su color y su banda</b>. El color y la banda aparecen igual
+  en el mapa, en el cartel, en la placa y en la app. Todo lo demás —texto, números, logos— va en
+  negro sobre blanco.</p>
+  <p class="chico gris">Blanco de fondo por tres razones: contrasta más, calienta menos al sol y
+  envejece mejor (el color impreso se destiñe; el blanco no). El color se usa como dato, no como adorno.</p>
+</div>
+
+<h3 style="margin-top:30px">1.1 Paleta</h3>
+<div class="chips">
+  <div class="chip"><div class="sw" style="background:#111111"></div><div class="hex">#111111</div><div class="uso">Tinta. Todo el texto y los números.</div></div>
+  <div class="chip"><div class="sw" style="background:#ffffff"></div><div class="hex">#FFFFFF</div><div class="uso">Fondo de todas las placas.</div></div>
+  <div class="chip"><div class="sw" style="background:#6b7280"></div><div class="hex">#6B7280</div><div class="uso">Gris. Datos secundarios y pies.</div></div>
+  <div class="chip"><div class="sw" style="background:#10b981"></div><div class="hex">#10B981</div><div class="uso">Sendero BAJA.</div></div>
+  <div class="chip"><div class="sw" style="background:#f59e0b"></div><div class="hex">#F59E0B</div><div class="uso">Sendero MEDIA.</div></div>
+  <div class="chip"><div class="sw" style="background:#ef4444"></div><div class="hex">#EF4444</div><div class="uso">Sendero ALTA.</div></div>
+</div>
+
+<h3 style="margin-top:30px">1.2 La regla del color (con números)</h3>
+<p class="chico">El color del sendero <b>nunca</b> se usa para texto. Se usa para campos de color, y
+adentro va <b>texto negro</b>. Verificado:</p>
+<table>
+  <tr><th>Combinación</th><th>Contraste</th><th>¿Se usa?</th></tr>
+  <tr><td>Negro sobre blanco</td><td class="num">19,3 : 1</td><td class="ok">Sí — todo el texto</td></tr>
+  <tr><td>Negro sobre verde (baja)</td><td class="num">8,2 : 1</td><td class="ok">Sí — número de punto</td></tr>
+  <tr><td>Negro sobre ámbar (media)</td><td class="num">9,8 : 1</td><td class="ok">Sí — número de punto</td></tr>
+  <tr><td>Negro sobre rojo (alta)</td><td class="num">5,6 : 1</td><td class="ok">Sí — número de punto</td></tr>
+  <tr><td>Blanco sobre verde</td><td class="num">2,6 : 1</td><td class="no">No</td></tr>
+  <tr><td>Blanco sobre ámbar</td><td class="num">2,2 : 1</td><td class="no">No</td></tr>
+  <tr><td>Ámbar sobre blanco (texto)</td><td class="num">2,2 : 1</td><td class="no">No</td></tr>
+</table>
+<p class="nota">Mínimo recomendado de accesibilidad: 4,5 : 1. Todo lo que se usa lo supera.</p>
+
+<h3 style="margin-top:30px">1.3 Las bandas: el color no alcanza solo</h3>
+<p class="chico">Verde y rojo son el peor par para el daltonismo más común (afecta a 1 de cada 12
+hombres). Por eso cada sendero tiene, además del color, <b>una cantidad de franjas distinta</b>: se
+distingue en color, en blanco y negro, y de lejos.</p>
+<div class="fila">
+  <div>
+    <svg width="120" height="76" viewBox="0 0 70 70" style="background:#fff;box-shadow:0 0 0 1px #ddd">
+      <rect x="0" y="0" width="70" height="70" fill="#10b981"/>
+    </svg>
+    <p class="chico"><b>BAJA</b><br>1 franja</p>
+  </div>
+  <div>
+    <svg width="120" height="76" viewBox="0 0 70 70" style="background:#fff;box-shadow:0 0 0 1px #ddd">
+      <rect x="0" y="0" width="70" height="23.33" fill="#f59e0b"/>
+      <rect x="0" y="46.67" width="70" height="23.33" fill="#f59e0b"/>
+    </svg>
+    <p class="chico"><b>MEDIA</b><br>2 franjas</p>
+  </div>
+  <div>
+    <svg width="120" height="76" viewBox="0 0 70 70" style="background:#fff;box-shadow:0 0 0 1px #ddd">
+      <rect x="0" y="0" width="70" height="14" fill="#ef4444"/>
+      <rect x="0" y="28" width="70" height="14" fill="#ef4444"/>
+      <rect x="0" y="56" width="70" height="14" fill="#ef4444"/>
+    </svg>
+    <p class="chico"><b>ALTA</b><br>3 franjas</p>
+  </div>
+</div>
+
+<h3 style="margin-top:30px">1.4 Cuerpo de texto y jerarquía</h3>
+<table>
+  <tr><th>Uso</th><th>Tipografía</th><th>Alto de letra</th><th>Se lee a</th></tr>
+  <tr><td>Título del cartel</td><td>Space Grotesk 700</td><td class="num">76 mm</td><td>25 m</td></tr>
+  <tr><td>Nombre del sendero (placa)</td><td>Space Grotesk 700</td><td class="num">54 mm</td><td>12 m</td></tr>
+  <tr><td>Número de punto</td><td>Space Grotesk 700</td><td class="num">70 mm</td><td>15 m</td></tr>
+  <tr><td>Datos (km, desnivel)</td><td>Inter 500</td><td class="num">13 mm</td><td>3 m</td></tr>
+  <tr><td>Pie legal / créditos</td><td>Inter 400</td><td class="num">8 mm</td><td>1 m</td></tr>
+</table>
+<p class="nota">Regla práctica: 25 mm de alto de letra por cada 10 m de distancia. Se calculó con eso.</p>
+
+<!-- ===================== PIEZA A ===================== -->
+<h2>2. Pieza A — Cartel de la puerta</h2>
+<div class="fig">
+  <div class="cap">
+    <span class="med">1400 × 1000 mm</span>
+    <span class="gris chico">1 pieza · cabecera Sur · en pantalla 1 mm = 0,77 px</span>
+  </div>
+
+  <svg class="pza" width="1080" height="771" viewBox="0 0 1400 1000" role="img" aria-label="Cartel de la puerta">
+    <rect x="0" y="0" width="1400" height="1000" fill="#ffffff"/>
+
+    <!-- encabezado -->
+    <text x="60" y="150" font-family="Space Grotesk" font-weight="700" font-size="76" fill="#111111">SENDEROS MONTE MITRE</text>
+    <rect x="60" y="176" width="1280" height="4" fill="#111111"/>
+    <text x="60" y="216" font-size="20" font-weight="500" letter-spacing="1.5" fill="#111111">MUNICIPALIDAD DE GUARDIA MITRE · 3 RECORRIDOS RELEVADOS CON GPS</text>
+
+    <!-- MAPA: trazado real, norte arriba -->
+    <g transform="translate(60,240)">
+      <rect x="0" y="0" width="680" height="603" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+      <g transform="scale(0.6415)">
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <!-- BAJA -->
+          <path stroke="#10b981" stroke-width="9"
+            d="M629.8 832 L649.2 802.5 L661.2 693.1 L674.1 670 L691 652.1 L729.6 631 L722.4 632.1 L731.3 605.8 L711.1 597.4 L687 517.4 L654.8 494.3 L649.2 468 L631.4 435.3 L619.4 433.2 L609.7 393.3 L584.8 358.5 L575.1 356.4 L576.7 353.3 L551 324.9 L538.9 302.8 L520.4 293.3 L495.4 270.2 L459.2 256.5 L473.7 236.5 L533.3 181.8 L575.9 167 L618.6 170.2 L643.5 162.8 L798.1 47.1 L818.2 55.5 L836.7 82.9 L893.8 122.9 L904.3 172.3 L952.6 210.2 L988 265.9 L970.3 428 L971.1 440.6 L988 472.2 L980.8 494.3 L983.2 514.3 L888.2 591.1 L839.1 617.4 L826.2 619.5 L782 611 L734.5 627.9 L692.6 650 L673.3 673.1 L662.8 694.2 L651.6 785.7 L643.5 814.1 L637.1 825.7 L632.3 826.7 L635.5 825.7"/>
+          <!-- ALTA -->
+          <path stroke="#ef4444" stroke-width="9"
+            d="M649.9 663 L629.6 633.8 L637.4 617.4 L666.8 600.2 L697.8 589.1 L706.5 583.1 L690.9 553.8 L674.5 510 L653.8 494.5 L638.3 469.6 L630.5 438.7 L613.2 436.1 L579.5 400.9 L590.8 375.1 L560.5 337.3 L530.3 304.6 L500.1 268.5 L456.9 251.3 L443.1 237.2 L438.8 217.2 L423 209 L415.5 192 L407.7 181.3 L396.3 165.2 L393.5 157.2 L379.6 139.8 L368 119.9 L360.4 98.4 L356.8 86.3 L352 69.4 L340.8 55.2 L333.9 39.5 L320.7 19.7 L307.1 12 L269.5 29 L260.7 32.4 L231.8 26 L209.3 31.5 L209.5 53.7 L183.6 56.9 L168.7 33.5 L160.1 22.5 L84.3 31.8 L74 59.7 L47 91.7 L20.8 112.8 L12 146.1 L27.1 158.3 L43.9 177.4 L39.8 208.4 L31.9 230.7 L31.9 238.9 L46.8 247.7 L56.3 249.2 L64 275 L53.7 337.2 L73.9 336 L97.7 324.6 L113.2 308.9 L123.2 287.4 L125.3 269.4 L146.4 265.8 L160.2 278 L171.5 298.6 L181.8 313.7 L204.7 319.7 L219.8 312 L241.4 303.8 L263.9 297.4 L279.8 295.6 L297.5 303.6 L299.1 324 L313.9 334.1 L315 351.1 L313.1 364.4 L317 375.6 L330.8 388.7 L328.4 422.2 L333.8 442.8 L327.5 457.4 L312.4 468.8 L305.5 475 L307.7 486 L317 499.3 L329.1 509.8 L348.3 520.4 L357.8 523.6 L371.6 531.3 L386.9 537.6 L402.9 552.2 L419.5 568.9 L424.3 584.8 L423.4 593.8 L406.1 606.1 L392.7 620.5 L385 632.9 L400.1 632.7 L418.6 638.1 L431.4 644.8 L439.6 649.9 L440.4 665.6 L445.8 677.4 L466.6 683.2 L535.7 671.2 L574.1 663.7 L625.2 673.1 L642.1 669.7"/>
+          <!-- MEDIA -->
+          <path stroke="#f59e0b" stroke-width="9"
+            d="M640.3 815.2 L653.2 783.6 L655.6 723.6 L662.8 682.6 L648.4 668.9 L652.4 658.4 L651.6 667.9 L635.5 675.2 L563.8 661.6 L526 673.1 L510.7 667.9 L509.1 679.4 L485.8 688.9 L447.9 680.5 L438.3 674.2 L442.3 650 L435.9 642.6 L398 627.9 L386.8 627.9 L377.9 650 L353.8 671 L347.3 670 L342.5 660.5 L348.9 622.6 L361.8 596.3 L365.8 567.9 L443.9 398.5 L456.8 352.2 L483.4 324.9 L516.4 241.7 L580.7 199.7 L576.7 174.4 L570.3 168.1 L559 168.1 L525.2 183.9 L450.4 259.6 L399.7 302.8 L370.7 350.1 L353 369.1 L332.8 381.7 L334.5 454.3 L306.3 478.5 L324.8 507.9 L392.4 537.4 L416.6 558.4 L419.8 566.9 L460.8 529 L501.9 506.9 L513.1 494.3 L542.9 477.4 L569.5 473.2 L612.9 442.7 L621.8 442.7 L633.1 431.1 L645.1 465.9 L655.6 480.6 L658 495.3 L721.6 545.8 L732.1 566.9 L728.8 583.7 L674.9 592.1 L654.8 610 L636.3 613.2 L629.8 623.7 L634.7 638.4 L669.3 688.9 L658 706.8 L649.2 799.4 L639.5 816.2"/>
+        </g>
+        <!-- nombres de los senderos, sobre el borde exterior de cada vuelta -->
+        <g font-size="36" font-weight="600" fill="#111111" stroke="#ffffff" stroke-width="9" paint-order="stroke" stroke-linejoin="round">
+          <text x="975" y="255" text-anchor="end">BAJA</text>
+          <text x="325" y="468">MEDIA</text>
+          <text x="35" y="132">ALTA</text>
+        </g>
+        <!-- cabeceras -->
+        <g>
+          <circle cx="635" cy="823" r="13" fill="#ffffff" stroke="#111111" stroke-width="4"/>
+          <circle cx="635" cy="823" r="6" fill="#111111"/>
+          <text x="600" y="790" font-size="30" font-weight="600" text-anchor="middle" fill="#111111" stroke="#ffffff" stroke-width="8" paint-order="stroke" stroke-linejoin="round">SALIDA</text>
+          <circle cx="649.9" cy="663" r="13" fill="#ffffff" stroke="#111111" stroke-width="4"/>
+          <circle cx="649.9" cy="663" r="6" fill="#111111"/>
+          <text x="680" y="648" font-size="30" font-weight="600" fill="#111111" stroke="#ffffff" stroke-width="8" paint-order="stroke" stroke-linejoin="round">ALTA</text>
+        </g>
+      </g>
+      <!-- norte y escala, en mm -->
+      <g>
+        <path d="M636 26 L648 56 L636 48 L624 56 Z" fill="#111111"/>
+        <text x="636" y="78" font-size="20" font-weight="600" text-anchor="middle" fill="#111111">N</text>
+        <rect x="24" y="565" width="62" height="6" fill="#111111"/>
+        <rect x="86" y="565" width="62" height="6" fill="#ffffff" stroke="#111111" stroke-width="1.5"/>
+        <text x="24" y="556" font-size="16" font-weight="500" fill="#111111">200 m</text>
+      </g>
+    </g>
+
+    <!-- ELEGÍ TU SENDERO -->
+    <text x="780" y="285" font-family="Space Grotesk" font-weight="700" font-size="30" fill="#111111">ELEGÍ TU SENDERO</text>
+
+    <!-- baja: 1 franja -->
+    <g transform="translate(780,315)">
+      <rect x="0" y="0" width="70" height="70" fill="#10b981"/>
+      <text x="100" y="46" font-family="Space Grotesk" font-weight="700" font-size="40" fill="#111111">BAJA</text>
+      <text x="100" y="76" font-size="21" font-weight="500" fill="#6b7280">2,38 km · desnivel 15 m · fácil</text>
+    </g>
+    <!-- media: 2 franjas -->
+    <g transform="translate(780,425)">
+      <rect x="0" y="0" width="70" height="23.33" fill="#f59e0b"/>
+      <rect x="0" y="46.67" width="70" height="23.33" fill="#f59e0b"/>
+      <text x="100" y="46" font-family="Space Grotesk" font-weight="700" font-size="40" fill="#111111">MEDIA</text>
+      <text x="100" y="76" font-size="21" font-weight="500" fill="#6b7280">2,64 km · desnivel 36 m · intermedio</text>
+    </g>
+    <!-- alta: 3 franjas -->
+    <g transform="translate(780,535)">
+      <rect x="0" y="0" width="70" height="14" fill="#ef4444"/>
+      <rect x="0" y="28" width="70" height="14" fill="#ef4444"/>
+      <rect x="0" y="56" width="70" height="14" fill="#ef4444"/>
+      <text x="100" y="46" font-family="Space Grotesk" font-weight="700" font-size="40" fill="#111111">ALTA</text>
+      <text x="100" y="76" font-size="21" font-weight="500" fill="#6b7280">2,68 km · desnivel 39 m · exigente</text>
+    </g>
+
+    <!-- QR -->
+    <g transform="translate(780,656)">
+      <rect x="0" y="0" width="200" height="200" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="100" y="96" font-family="Space Grotesk" font-weight="600" font-size="22" text-anchor="middle" fill="#6b7280">QR</text>
+      <text x="100" y="122" font-size="13" text-anchor="middle" fill="#9ca3af">200 × 200 mm</text>
+      <text x="220" y="40" font-family="Space Grotesk" font-weight="700" font-size="26" fill="#111111">ESCANEÁ LA APP</text>
+      <text x="220" y="74" font-size="21" fill="#111111">Mapa, guía de flora y fauna,</text>
+      <text x="220" y="100" font-size="21" fill="#111111">y registro de tiempos.</text>
+      <text x="220" y="140" font-size="17" fill="#6b7280">Se usa con señal: abrila antes de salir.</text>
+    </g>
+
+    <!-- pie -->
+    <rect x="60" y="862" width="1280" height="2" fill="#d1d5db"/>
+    <text x="60" y="903" font-size="18" font-weight="600" fill="#111111">LLEVÁ AGUA · NO ARRANQUES PLANTAS · VOLVÉ CON TU BASURA · CON VIENTO FUERTE NO SUBAS AL ALTO</text>
+    <text x="60" y="938" font-size="17" fill="#6b7280">Emergencias 911 · Ordenanza Nº ▢▢</text>
+    <g>
+      <image href="../app/src/assets/images/logo-senderos.png" x="1116" y="897" width="60" height="40" preserveAspectRatio="xMidYMid meet"/>
+      <image href="../app/src/assets/images/gm-logo.png" x="1192" y="897" width="40" height="40" preserveAspectRatio="xMidYMid meet"/>
+      <image href="../app/src/assets/images/isotipo-concejo.png" x="1248" y="897" width="36" height="40" preserveAspectRatio="xMidYMid meet"/>
+      <image href="../app/src/assets/images/deporte.png" x="1300" y="897" width="40" height="40" preserveAspectRatio="xMidYMid meet"/>
+    </g>
+  </svg>
+
+  <p class="nota"><b>Cambio propuesto de medida:</b> el plan decía 120 × 80 cm, pero a esa medida el mapa,
+  la leyenda, el QR y las recomendaciones no entran con letra legible. Se pasa a <b>140 × 100 cm</b>
+  (0,4 m² más de placa en total, en una sola pieza).<br>
+  Las recomendaciones extensas quedan en el <b>cartel de reglamento</b> (pieza aparte, 60 × 45 cm);
+  acá va sólo el recordatorio de una línea.</p>
+</div>
+
+<!-- ===================== PIEZA B ===================== -->
+<h2>3. Pieza B — Placa de inicio y meta (doble cara)</h2>
+<div class="fig">
+  <div class="cap">
+    <span class="med">250 × 200 mm · 3 unidades</span>
+    <span class="gris chico">una por sendero · 1 mm = 1,5 px</span>
+  </div>
+  <div class="fila">
+
+    <!-- FRENTE -->
+    <div>
+      <p class="chico gris" style="margin-bottom:6px">FRENTE — se ve al llegar al inicio</p>
+      <svg class="pza" width="375" height="300" viewBox="0 0 250 200" role="img" aria-label="Placa de inicio, frente">
+        <rect x="0" y="0" width="250" height="200" fill="#ffffff"/>
+        <rect x="0" y="0" width="250" height="26" fill="#10b981"/>
+        <text x="234" y="17" font-size="10" font-weight="600" text-anchor="end" fill="#111111">MUNICIPALIDAD DE GUARDIA MITRE</text>
+        <text x="16" y="92" font-family="Space Grotesk" font-weight="700" font-size="46" fill="#111111">BAJA</text>
+        <text x="16" y="120" font-size="10.5" font-weight="500" fill="#6b7280">2,38 km · desnivel 15 m</text>
+        <g transform="translate(16,166)">
+          <path d="M0 6 L14 16 L0 26 Z" fill="#111111"/>
+          <text x="24" y="24" font-family="Space Grotesk" font-weight="700" font-size="17" fill="#111111">EMPEZÁ ACÁ</text>
+        </g>
+        <g transform="translate(148,80)">
+          <rect x="0" y="0" width="88" height="88" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="5 3"/>
+          <text x="44" y="42" font-family="Space Grotesk" font-weight="600" font-size="12" text-anchor="middle" fill="#6b7280">QR</text>
+          <text x="44" y="58" font-size="8" text-anchor="middle" fill="#9ca3af">88 mm</text>
+        </g>
+        <text x="194" y="186" font-size="10" font-weight="500" text-anchor="middle" fill="#111111">Escaneá el mapa</text>
+      </svg>
+    </div>
+
+    <!-- DORSO -->
+    <div>
+      <p class="chico gris" style="margin-bottom:6px">DORSO — se ve al terminar (la vuelta de la placa)</p>
+      <svg class="pza" width="375" height="300" viewBox="0 0 250 200" role="img" aria-label="Placa de meta, dorso">
+        <rect x="0" y="0" width="250" height="200" fill="#ffffff"/>
+        <rect x="0" y="0" width="250" height="26" fill="#10b981"/>
+        <text x="234" y="17" font-size="10" font-weight="600" text-anchor="end" fill="#111111">MUNICIPALIDAD DE GUARDIA MITRE</text>
+        <text x="16" y="82" font-family="Space Grotesk" font-weight="700" font-size="38" fill="#111111">¡LLEGASTE!</text>
+        <text x="16" y="106" font-size="11" font-weight="500" fill="#6b7280">Completaste el sendero BAJA</text>
+        <g transform="translate(16,114)">
+          <rect x="0" y="0" width="80" height="80" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="5 3"/>
+          <text x="40" y="38" font-family="Space Grotesk" font-weight="600" font-size="12" text-anchor="middle" fill="#6b7280">QR</text>
+          <text x="40" y="54" font-size="8" text-anchor="middle" fill="#9ca3af">80 mm</text>
+        </g>
+        <text x="108" y="138" font-family="Space Grotesk" font-weight="700" font-size="15" fill="#111111">REGISTRÁ</text>
+        <text x="108" y="156" font-family="Space Grotesk" font-weight="700" font-size="15" fill="#111111">TU TIEMPO</text>
+        <text x="108" y="176" font-size="9" fill="#6b7280">cuando vuelvas al pueblo</text>
+        <text x="108" y="192" font-size="9" fill="#6b7280">Dejalo como lo encontraste.</text>
+      </svg>
+    </div>
+
+  </div>
+  <p class="nota">La misma pieza sirve de <b>inicio</b> (frente) y de <b>meta</b> (dorso). En el sendero
+  Alta, además, el inicio y la meta caen en el mismo poste: una sola placa hace las dos cosas.<br>
+  <b>Nota:</b> la URL completa no entra legible en una placa de 25 × 20; por eso acá va sólo el QR y
+  la dirección escrita va en el cartel de la puerta. Si se define una URL corta, entra acá.</p>
+</div>
+
+<!-- ===================== PIEZA D ===================== -->
+<h2>4. Pieza D — Placa de punto numerado</h2>
+<div class="fig">
+  <div class="cap">
+    <span class="med">250 × 200 mm · 22 unidades</span>
+    <span class="gris chico">ejemplo: punto 3 del sendero ALTA · sin QR</span>
+  </div>
+  <div class="fila">
+    <svg class="pza" width="375" height="300" viewBox="0 0 250 200" role="img" aria-label="Placa de punto numerado">
+      <rect x="0" y="0" width="250" height="200" fill="#ffffff"/>
+      <rect x="0" y="0" width="250" height="5.2" fill="#ef4444"/>
+      <rect x="0" y="10.4" width="250" height="5.2" fill="#ef4444"/>
+      <rect x="0" y="20.8" width="250" height="5.2" fill="#ef4444"/>
+      <text x="234" y="17" font-size="10" font-weight="600" text-anchor="end" fill="#111111">MUNICIPALIDAD DE GUARDIA MITRE</text>
+      <rect x="14" y="50" width="80" height="80" fill="#ef4444"/>
+      <text x="54" y="114" font-family="Space Grotesk" font-weight="700" font-size="58" text-anchor="middle" fill="#111111">3</text>
+      <text x="106" y="72" font-family="Space Grotesk" font-weight="700" font-size="15" fill="#111111">EL CAÑÓN DE LA</text>
+      <text x="106" y="92" font-family="Space Grotesk" font-weight="700" font-size="15" fill="#111111">TORTURA</text>
+      <text x="106" y="108" font-size="10.5" fill="#6b7280">Paso estrecho esculpido</text>
+      <text x="106" y="123" font-size="10.5" fill="#6b7280">por las lluvias entre</text>
+      <text x="106" y="138" font-size="10.5" fill="#6b7280">dunas arenosas.</text>
+      <text x="106" y="155" font-size="10" font-weight="600" fill="#111111">A 1,07 km del inicio</text>
+      <text x="14" y="176" font-size="11" font-weight="600" fill="#111111">PUNTO 3 DE 7 · SENDERO ALTA</text>
+    </svg>
+    <div style="max-width:420px">
+      <p class="chico"><b>Cómo se arma el sistema:</b> la placa se ve igual en los 22 puntos.
+      Cambian tres cosas: el color y las franjas de la banda (el sendero), el número y el nombre del punto.</p>
+      <p class="chico"><b>El número va negro sobre el color del sendero</b>, nunca en el color: ámbar
+      sobre blanco casi no se ve (2,2 : 1). Así, los tres colores se leen igual de bien.</p>
+      <p class="chico gris">Sin QR, por decisión: la app no arranca sin señal, así que un QR en el
+      monte sería un cartel que promete y no cumple. En el monte guía el cartel.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PIEZA E ===================== -->
+<h2>5. Pieza E — Flecha de orientación</h2>
+<div class="fig">
+  <div class="cap">
+    <span class="med">300 × 100 mm</span>
+    <span class="gris chico">sólo en bifurcaciones · 1 mm = 1,5 px</span>
+  </div>
+  <svg class="pza" width="450" height="150" viewBox="0 0 300 100" role="img" aria-label="Flecha de orientación">
+    <rect x="0" y="0" width="300" height="100" fill="#ef4444"/>
+    <path d="M20 30 L62 50 L20 70 Z" fill="#111111"/>
+    <rect x="20" y="44" width="42" height="12" fill="#111111"/>
+    <text x="84" y="66" font-family="Space Grotesk" font-weight="700" font-size="40" fill="#111111">ALTA</text>
+  </svg>
+  <p class="nota">De lejos se lee el color y el nombre; de cerca, la flecha. Va montada en un poste bajo,
+  perpendicular al camino, mirando en el sentido de la marcha.</p>
+</div>
+
+<!-- ===================== PENDIENTES ===================== -->
+<h2>6. Pendientes que aparecieron al diseñar</h2>
+<div class="grid2">
+  <div class="card" style="border-left-color:var(--rojo)">
+    <h3>1. El logo dice “ALTA Y BAJA”</h3>
+    <p class="chico">El lockup del proyecto (<span class="mono">logo-senderos.png</span>) dice
+    <b>“ALTA Y BAJA”</b>, pero hoy hay <b>tres</b> senderos: baja, media y alta. En un cartel de 1,4 m
+    se nota. Hay que actualizar el logo o dejar el lockup afuera del cartel.</p>
+  </div>
+  <div class="card" style="border-left-color:var(--ambar)">
+    <h3>2. La URL no entra en la placa chica</h3>
+    <p class="chico">La dirección completa (<span class="mono">modernizacionmunigm-tech.github.io/Senderos-GM/...</span>)
+    ocupa más que el ancho de una placa de 25 cm a un tamaño legible. Opciones: definir una URL corta
+    municipal, o dejar sólo el QR en las placas.</p>
+  </div>
+  <div class="card">
+    <h3>3. El color de la vía no siempre existe</h3>
+    <p class="chico">Si el municipio define un color institucional propio, hay que meterlo en vez de
+    sumarlo: el sistema tiene 3 colores de sendero y no admite un cuarto sin perder lectura.</p>
+  </div>
+  <div class="card">
+    <h3>4. Mapa geográfico, no diagrama</h3>
+    <p class="chico">Se dibuja el trazado real y el norte arriba. Un plano estilizado (como el del subte
+    de Nueva York) sería más “lindo”, pero en el monte la gente necesita saber dónde está de verdad.</p>
+  </div>
+</div>
+
+<h2>7. Para imprimir (cuando se apruebe el diseño)</h2>
+<ul>
+  <li>Se entregan los archivos en <b>SVG a tamaño real en milímetros</b> (estos mockups ya están
+  construidos así: 1 unidad = 1 mm).</li>
+  <li>Tipografías para el imprentero: <b>Space Grotesk</b> y <b>Inter</b> (libres, Google Fonts), o se
+  convierten las letras a curvas.</li>
+  <li><b>Sangrado 5 mm</b> y las franjas de color a sangre.</li>
+  <li>Los <b>QR</b> se generan recién con la URL definitiva y se prueban impresos, al sol, con un
+  celular viejo, antes de mandar las 35 piezas.</li>
+  <li>Los logos institucionales van en versión oscura (la que se lee sobre blanco), tal como están acá.</li>
+</ul>
+
+</div>
+</body>
+</html>
