@@ -354,6 +354,10 @@ export default function App() {
                 selectedTrailId={selectedTrailId} 
                 onSelectTrail={setSelectedTrailId} 
                 initialSimpleMode={mapSimpleMode}
+                onSimpleModeChange={(value) => {
+                  setMapSimpleMode(value);
+                  localStorage.setItem('map_simple_mode', String(value));
+                }}
               />
             </Suspense>
           </div>

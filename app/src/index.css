@@ -119,3 +119,15 @@
 ) {
   color: #f1f5f9 !important;
 }
+
+/* Mapa a pantalla completa mientras se graba: la barra de abajo (reloj y boton
+   para detener) tapa los controles del mapa, asi que los subimos. */
+.map-grabando .leaflet-bottom.leaflet-right {
+  bottom: 86px;
+}
+.map-grabando #btn-gps-recenter {
+  bottom: 6.5rem;
+}
+.map-grabando #btn-gps-follow {
+  bottom: 10.75rem;
+}

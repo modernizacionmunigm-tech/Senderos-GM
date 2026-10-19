@@ -71,7 +71,7 @@ export const SPECIES_LIST: Species[] = [
     scientificName: 'Prosopis alpataco',
     category: 'arboles',
     categoryLabel: 'Arbusto Espinoso',
-    description: 'Arbusto bajo caracterizado por sus ramas semienterradas y flexuosas llenas de espinas cónicas muy punzantes. Esencial para fijar los médanos costeros.',
+    description: 'Arbusto bajo caracterizado por sus ramas semienterradas y flexuosas llenas de espinas cónicas muy punzantes. Esencial para fijar el suelo de las lomas y del borde costero.',
     season: 'Floración: Octubre a Enero',
     curiosity: 'Desarrolla raíces pivotantes extremadamente profundas de hasta 15 metros para buscar humedad en napas subterráneas de la árida llanura.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Prosopis_alpataco_01.jpg',

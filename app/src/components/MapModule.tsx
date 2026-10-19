@@ -17,7 +17,10 @@ import {
   AlertTriangle,
   EyeOff,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  Maximize2,
+  Minimize2,
+  HelpCircle
 } from 'lucide-react';
 import { Trail, PointOfInterest } from '../types';
 import { TRAILS, GUARDIA_MITRE_CENTER } from '../data';
@@ -96,9 +99,12 @@ interface MapModuleProps {
   selectedTrailId: string | null;
   onSelectTrail: (trailId: string | null) => void;
   initialSimpleMode?: boolean;
+  /** Avisa al padre cuando se prende/apaga el Modo Simple, así el botón del
+   *  encabezado y el ojito del mapa quedan siempre sincronizados. */
+  onSimpleModeChange?: (value: boolean) => void;
 }
 
-export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpleMode = false }: MapModuleProps) {
+export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpleMode = false, onSimpleModeChange }: MapModuleProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   
@@ -138,6 +144,9 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   
   // Nuevos estados para Modo Simple y Checkpoints
   const [simpleMode, setSimpleMode] = useState(initialSimpleMode);
+  // El mapa (que se usa a pantalla completa mientras se sigue el recorrido)
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const [showGpsHelp, setShowGpsHelp] = useState(false);
   const [showCheckpointBtn, setShowCheckpointBtn] = useState(false);
   const [lastCheckpointIndex, setLastCheckpointIndex] = useState(-1);
   const [checkpointMessage, setCheckpointMessage] = useState<string | null>(null);
@@ -172,6 +181,27 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     }
   }, []);
 
+  // El botón del encabezado ("Modo Simple: OFF") y el ojito del mapa mandan
+  // sobre el mismo estado. El mapa avisa al padre cuando cambia el ojito, y
+  // acá sigue los cambios que vengan de arriba.
+  useEffect(() => {
+    setSimpleMode(initialSimpleMode);
+  }, [initialSimpleMode]);
+
+  const changeSimpleMode = (value: boolean) => {
+    setSimpleMode(value);
+    onSimpleModeChange?.(value);
+  };
+
+  // Al entrar o salir de pantalla completa hay que avisarle a Leaflet que
+  // cambió el tamaño del contenedor, si no quedan los tiles grises.
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize();
+    }, 120);
+    return () => window.clearTimeout(id);
+  }, [mapExpanded]);
+
   const triggerVibrate = (pattern: number | number[] = 40) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(pattern);
@@ -199,6 +229,8 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     const map = L.map(mapContainerRef.current, {
       center: GUARDIA_MITRE_CENTER,
       zoom: 14,
+      maxZoom: 19,
+      minZoom: 11,
       zoomControl: false,
     });
     mapInstanceRef.current = map;
@@ -211,8 +243,14 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     baseTiles.addTo(map);
 
     // Add satellite tiles (Esri)
+    // maxNativeZoom: en el campo la imagen de Esri no llega a los últimos
+    // niveles de zoom y devuelve "Map data not yet available" (el cuadrado
+    // gris). Hasta el nivel 17 hay imagen; más cerca, Leaflet agranda la
+    // última que sirve en vez de mostrar el cartel de error.
     const satelliteTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri'
+      attribution: 'Tiles &copy; Esri',
+      maxNativeZoom: 17,
+      maxZoom: 19,
     });
     satelliteTilesRef.current = satelliteTiles;
 
@@ -587,6 +625,9 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     triggerVibrate(100);
     setRecording(false);
     setShowCheckpointBtn(false);
+    // Si veníamos siguiendo el recorrido a pantalla completa, volvemos a la
+    // vista normal para ver el resumen y el panel de grabación.
+    setMapExpanded(false);
     lastCheckpointRef.current = -1;
     setLastCheckpointIndex(-1);
     setCheckpointMessage(null);
@@ -635,24 +676,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
 
   return (
     <div id="map-module-layout" className="flex flex-col gap-4 h-full relative">
-      
-      {/* Botón flotante para activar/desactivar Modo Simple */}
-      <button
-        onClick={() => setSimpleMode(!simpleMode)}
-        className="absolute top-4 left-4 z-30 p-2 bg-white rounded-full shadow-md border border-gray-100 text-gray-600 hover:text-emerald-600"
-        title={simpleMode ? "Ver Mapa Completo" : "Modo Simple (Solo Cronómetro)"}
-      >
-        {simpleMode ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-      </button>
 
-      {/* Botón para cambiar entre vista calle y satelital */}
-      <button
-        onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
-        className="absolute top-4 right-20 z-30 p-2 bg-white rounded-full shadow-md border border-gray-100 text-gray-600 hover:text-blue-600"
-        title={mapType === 'street' ? "Ver Vista Satelital" : "Ver Vista Calle"}
-      >
-        <Layers className="w-5 h-5" />
-      </button>
+      {/* Los controles del mapa (ojo, capas y pantalla completa) van adentro de
+          la tarjeta del mapa, más abajo, para que sigan bien su posición
+          cuando el mapa se pone a pantalla completa. */}
 
       {/* UI de Modo Simple: Solo Cronómetro y Botones Grandes */}
       {simpleMode && recording && (
@@ -708,21 +735,74 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
              </div>
           )}
 
-          <button
-            onClick={stopTracking}
-            className="w-full max-w-sm py-5 bg-red-600 hover:bg-red-700 text-white text-xl font-bold rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-transform active:scale-95"
-          >
-            <Square className="w-6 h-6 fill-current" />
-            DETENER Y GUARDAR
-          </button>
+          <div className="w-full max-w-sm space-y-3">
+            <button
+              onClick={() => {
+                triggerVibrate();
+                // Pasar a ver el mapa a pantalla completa para seguir el
+                // recorrido, sin dejar de grabar.
+                changeSimpleMode(false);
+                setMapExpanded(true);
+              }}
+              className="w-full py-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-2xl border border-emerald-200 flex items-center justify-center gap-2 transition-all"
+            >
+              <Maximize2 className="w-5 h-5" />
+              Ver el mapa mientras recorro
+            </button>
+
+            <button
+              onClick={stopTracking}
+              className="w-full py-5 bg-red-600 hover:bg-red-700 text-white text-xl font-bold rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-transform active:scale-95"
+            >
+              <Square className="w-6 h-6 fill-current" />
+              DETENER Y GUARDAR
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Contenedor del Mapa (Oculto en modo simple grabando) */}
+      {/* Contenedor del Mapa (Oculto en modo simple grabando).
+          En pantalla completa se sale del flujo con `fixed` y ocupa todo. */}
       {!simpleMode || !recording ? (
-        <div className={`relative grow ${simpleMode && !recording ? 'h-[450px]' : 'h-[450px]'} shadow-sm rounded-2xl border border-gray-100 overflow-hidden`}>
+        <div
+          className={[
+            mapExpanded
+              ? 'fixed inset-0 z-[45] h-[100dvh] w-screen bg-gray-100'
+              : `relative grow ${simpleMode && !recording ? 'h-[450px]' : 'h-[450px]'} shadow-sm rounded-2xl border border-gray-100 overflow-hidden`,
+            mapExpanded && recording ? 'map-grabando' : '',
+          ].join(' ')}
+        >
            {/* Leaflet hook element */}
           <div id="leaflet-map-element" ref={mapContainerRef} className="h-full w-full" />
+
+          {/* Controles del mapa */}
+          <button
+            onClick={() => changeSimpleMode(!simpleMode)}
+            className="absolute top-4 left-4 z-30 p-2 bg-white rounded-full shadow-md border border-gray-100 text-gray-600 hover:text-emerald-600"
+            title={simpleMode ? 'Ver mapa completo' : 'Modo Simple: sólo cronómetro'}
+          >
+            {simpleMode ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+          </button>
+
+          <button
+            onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
+            className="absolute top-4 right-20 z-30 p-2 bg-white rounded-full shadow-md border border-gray-100 text-gray-600 hover:text-blue-600"
+            title={mapType === 'street' ? 'Ver vista satelital' : 'Ver vista calle'}
+          >
+            <Layers className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={() => {
+              triggerVibrate();
+              setMapExpanded(!mapExpanded);
+            }}
+            className="absolute top-4 right-4 z-30 p-2 bg-white rounded-full shadow-md border border-gray-100 text-gray-600 hover:text-emerald-600"
+            title={mapExpanded ? 'Salir de pantalla completa' : 'Ver el mapa a pantalla completa'}
+          >
+            {mapExpanded ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </button>
+
 
           {/* Calidad de la señal GPS. Sin esto, una ubicación por antena
               (sin satélites) parece una ubicación exacta en el mapa. */}
@@ -752,13 +832,76 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
           {/* Aviso de ubicación aproximada: pasa cuando el navegador tiene el
               permiso de ubicación en "aproximada" o el GPS no tomó señal. */}
           {poorAccuracy && !geolocationError && (
-            <div className="absolute top-14 left-4 right-4 z-20 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-[11px] leading-snug flex items-start gap-2 shadow-md">
-              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <strong>Ubicación aproximada (±{Math.round(gpsAccuracy || 0)} m).</strong>{' '}
-                El GPS todavía no tomó señal, así que el punto azul es una
-                estimación por antena. Salí a cielo abierto y revisá que el
-                permiso de ubicación del sitio sea <strong>“Precisa”</strong>.
+            <div className="absolute top-16 left-4 right-4 z-20 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-[11px] leading-snug shadow-md">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <strong>Ubicación aproximada (±{Math.round(gpsAccuracy || 0)} m).</strong>{' '}
+                  El GPS todavía no tomó señal, así que el punto azul es una
+                  estimación por antena. Salí a cielo abierto y revisá que el
+                  permiso de ubicación del sitio sea <strong>“Precisa”</strong>.
+                </div>
+              </div>
+              <button
+                onClick={() => { triggerVibrate(); setShowGpsHelp(true); }}
+                className="mt-2 w-full py-1.5 bg-white border border-amber-300 text-amber-800 font-bold rounded-lg flex items-center justify-center gap-1.5"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                ¿Cómo lo activo? Paso a paso
+              </button>
+            </div>
+          )}
+
+          {/* Ayuda de ubicación precisa: explicada para quien no sabe de permisos */}
+          {showGpsHelp && (
+            <div className="absolute inset-0 z-30 bg-white/97 overflow-y-auto p-4 text-gray-800">
+              <div className="max-w-md mx-auto space-y-3">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <h3 className="font-display font-extrabold text-base">
+                    Cómo activar la ubicación precisa
+                  </h3>
+                </div>
+
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Si el teléfono tiene el permiso en <strong>“Aproximada”</strong>,
+                  el mapa te va a mostrar una zona y no tu posición exacta. Se
+                  cambia una sola vez:
+                </p>
+
+                <div className="rounded-xl border border-gray-200 p-3 space-y-1.5">
+                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Android (Chrome)</p>
+                  <ol className="text-xs text-gray-700 space-y-1 list-decimal list-inside leading-relaxed">
+                    <li>Tocá el <strong>candadito</strong> al lado de la dirección de la página.</li>
+                    <li>Entrá a <strong>Permisos</strong> → <strong>Ubicación</strong>.</li>
+                    <li>Elegí <strong>“Precisa”</strong> (no “Aproximada”).</li>
+                    <li>Recargá la página.</li>
+                  </ol>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 p-3 space-y-1.5">
+                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">iPhone (Safari)</p>
+                  <ol className="text-xs text-gray-700 space-y-1 list-decimal list-inside leading-relaxed">
+                    <li>Abrí <strong>Ajustes</strong> del teléfono.</li>
+                    <li><strong>Privacidad y seguridad</strong> → <strong>Localización</strong>.</li>
+                    <li>Buscá <strong>Safari</strong> y elegí <strong>“Precisa”</strong>.</li>
+                    <li>Recargá la página.</li>
+                  </ol>
+                </div>
+
+                <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-xs text-emerald-900 leading-relaxed">
+                  <strong>Importante:</strong> el GPS necesita <strong>cielo abierto</strong>.
+                  Adentro de la casa, en el auto o abajo de los árboles no agarra
+                  satélites. Salí al patio o a la vereda y esperá unos segundos:
+                  el punto azul se va a acomodar solo.
+                </div>
+
+                <button
+                  onClick={() => { triggerVibrate(); setShowGpsHelp(false); }}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl"
+                >
+                  Entendido
+                </button>
               </div>
             </div>
           )}
@@ -809,11 +952,20 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
 
           {/* Geolocation notifications overlay */}
           {geolocationError && (
-            <div className="absolute top-4 left-4 right-4 z-20 p-3.5 bg-red-50 border border-red-200 text-red-900 rounded-xl text-xs flex items-center gap-2.5 shadow-md">
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-              <div className="flex-1">
-                <strong>GPS: </strong>{geolocationError}
+            <div className="absolute top-16 left-4 right-4 z-20 p-3.5 bg-red-50 border border-red-200 text-red-900 rounded-xl text-xs shadow-md">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                <div className="flex-1">
+                  <strong>GPS: </strong>{geolocationError}
+                </div>
               </div>
+              <button
+                onClick={() => { triggerVibrate(); setShowGpsHelp(true); }}
+                className="mt-2 w-full py-1.5 bg-white border border-red-300 text-red-800 font-bold rounded-lg flex items-center justify-center gap-1.5"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                ¿Cómo lo activo? Paso a paso
+              </button>
             </div>
           )}
 
@@ -821,7 +973,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
               Se exige buena precisión: con una lectura por antena (±1 km)
               avisaría "fuera del sendero" sin que sea cierto. */}
           {recording && offRouteDistance !== null && offRouteDistance > 40 && gpsAccuracy !== null && gpsAccuracy <= 50 && (
-            <div className={`absolute ${geolocationError ? 'top-20' : 'top-4'} left-4 right-4 z-20 p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center gap-2.5 shadow-md`}>
+            <div className={`absolute ${geolocationError ? 'top-44' : 'top-16'} left-4 right-4 z-20 p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center gap-2.5 shadow-md`}>
               <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
               <div className="flex-1">
                 <strong>Fuera del sendero: </strong>
@@ -832,7 +984,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
 
           {/* Brújula al sendero: flecha y distancia al punto más cercano del trazado */}
           {!simpleMode && selectedTrailId && navInfo && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3.5 py-2 bg-white/95 backdrop-blur-md rounded-full shadow-lg border border-gray-100 max-w-[calc(100%-2rem)]">
+            <div className={`absolute ${mapExpanded && recording ? 'bottom-24' : 'bottom-4'} left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3.5 py-2 bg-white/95 backdrop-blur-md rounded-full shadow-lg border border-gray-100 max-w-[calc(100%-2rem)]`}>
               <span
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                   navInfo.distance < 15 ? 'bg-emerald-100 text-emerald-700'
@@ -864,6 +1016,26 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                   </span>
                 )}
               </div>
+            </div>
+          )}
+          {/* A pantalla completa y grabando: reloj y botón para detener, así no
+              hay que salir de la pantalla completa para terminar el recorrido. */}
+          {mapExpanded && recording && (
+            <div className="absolute bottom-4 left-4 right-4 z-30 flex items-center justify-between gap-3 px-3.5 py-2.5 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100">
+              <div className="leading-tight">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-red-500 font-mono">
+                  Grabando
+                </span>
+                <span className="text-lg font-black font-mono text-gray-900">{formatTime(elapsedSeconds)}</span>
+                <span className="block text-[10px] text-gray-500">{(totalDistance / 1000).toFixed(2)} km</span>
+              </div>
+              <button
+                onClick={stopTracking}
+                className="py-3 px-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl flex items-center gap-2 transition-transform active:scale-95"
+              >
+                <Square className="w-4 h-4 fill-current" />
+                Detener y guardar
+              </button>
             </div>
           )}
         </div>

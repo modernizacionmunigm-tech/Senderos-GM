@@ -65,7 +65,7 @@ return (
         </p>
 
         <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-sans">
-          La visión se cimenta en la revalorización de rincones silvestres que antes carecían de senderos marcados, permitiendo a niños, jóvenes y adultos mayores caminar sobre senderos de llanuras, médanos y montes con total seguridad y con fines recreativos y educativos.
+          La visión se cimenta en la revalorización de rincones silvestres que antes carecían de senderos marcados, permitiendo a niños, jóvenes y adultos mayores caminar sobre senderos de llanuras, lomas y montes con total seguridad y con fines recreativos y educativos.
         </p>
       </div>
 
