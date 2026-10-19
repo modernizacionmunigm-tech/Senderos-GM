@@ -335,12 +335,11 @@ export const GOOGLE_FORM_CONFIG = {
     // la tabla la lee de ahí. Si algún día se agrega la pregunta al
     // formulario, alcanza con pegar acá su "entry.XXXXXXXX".
     categoria: '',
-    // El tiempo va en dos columnas: "Tiempo (minutos)" y "Tiempo (segundos)".
-    // Mientras esta esté vacía, la app manda los minutos con decimales
-    // (12.517 = 12 min 31 s) para no perder los segundos. Apenas se pegue acá
-    // el "entry.XXXXXXXX" de la pregunta de segundos, empieza a mandar las dos
-    // columnas limpias (12 y 31).
-    tiempoSegundos: '',
+    // El tiempo va en dos columnas de la planilla: "Tiempo (minutos)" y
+    // "Tiempo (segundos)" (12 y 31). Si esta quedara vacía, la app vuelve sola
+    // a mandar los minutos con decimales (12.517 = 12 min 31 s), que la tabla
+    // también entiende.
+    tiempoSegundos: 'entry.1708924668',
   }
 };
 
