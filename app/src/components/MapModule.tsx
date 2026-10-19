@@ -329,14 +329,21 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     if (!map) return;
 
     const radius = Math.max(accuracy, 5);
+    // Si la lectura es imprecisa (típico de la ubicación por red, sin señal de
+    // satélites), el círculo va en ámbar: no es la posición real, es "por acá".
+    const poor = accuracy > 100;
+    const circleColor = poor ? '#f59e0b' : '#3b82f6';
     if (accuracyCircleRef.current) {
-      accuracyCircleRef.current.setLatLng([lat, lng]).setRadius(radius);
+      accuracyCircleRef.current
+        .setLatLng([lat, lng])
+        .setRadius(radius)
+        .setStyle({ color: circleColor, fillColor: circleColor });
     } else {
       accuracyCircleRef.current = L.circle([lat, lng], {
         radius,
-        color: '#3b82f6',
+        color: circleColor,
         weight: 1,
-        fillColor: '#3b82f6',
+        fillColor: circleColor,
         fillOpacity: 0.08,
         interactive: false,
       }).addTo(map);
@@ -363,7 +370,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     }
 
     if (followUserRef.current) {
-      map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate: true });
+      // Con lectura imprecisa no tiene sentido acercar a nivel calle: se vería
+      // una esquina equivocada como si fuera la real.
+      const zoom = accuracy > 200 ? 13 : accuracy > 100 ? 15 : Math.max(map.getZoom(), 16);
+      map.setView([lat, lng], zoom, { animate: true });
     }
   };
 
@@ -549,13 +559,14 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
           updateUserMarker(latitude, longitude, accuracy);
           updateOffRouteDistance(latitude, longitude);
           if (mapInstanceRef.current) {
-            mapInstanceRef.current.setView([latitude, longitude], 16);
+            const zoom = accuracy > 200 ? 13 : accuracy > 100 ? 15 : 17;
+            mapInstanceRef.current.setView([latitude, longitude], zoom);
           }
         },
         (err) => {
           alert('No se pudo determinar tu ubicación exacta: ' + err.message);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     }
   };
@@ -600,6 +611,16 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
       alert(`¡Recorrido guardado con éxito! Recorriste ${(totalDistance / 1000).toFixed(2)} km en ${formatTime(elapsedSeconds)}.`);
     }
   };
+
+  // Calidad de la señal GPS. Sin señal de satélites el celular devuelve una
+  // ubicación por red (antena/wifi) que puede estar a un kilómetro o más.
+  // Eso no es un error del mapa: hay que avisarlo para no confundir.
+  const gpsQuality: 'buscando' | 'alta' | 'media' | 'baja' =
+    gpsAccuracy === null ? 'buscando'
+      : gpsAccuracy <= 30 ? 'alta'
+      : gpsAccuracy <= 100 ? 'media'
+      : 'baja';
+  const poorAccuracy = gpsQuality === 'baja';
 
   const formatTime = (secs: number) => {
     const h = Math.floor(secs / 3600);
@@ -648,7 +669,14 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
               {(totalDistance / 1000).toFixed(2)} km recorridos
             </p>
             {gpsAccuracy && (
-              <p className="text-xs text-gray-400">Precisión GPS: {Math.round(gpsAccuracy)}m</p>
+              <p className={`text-xs font-semibold ${
+                gpsAccuracy <= 30 ? 'text-emerald-600'
+                  : gpsAccuracy <= 100 ? 'text-amber-600'
+                  : 'text-red-600'
+              }`}>
+                Precisión GPS: ±{Math.round(gpsAccuracy)} m
+                {gpsAccuracy > 100 && ' — salí a cielo abierto'}
+              </p>
             )}
           </div>
 
@@ -695,6 +723,45 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
         <div className={`relative grow ${simpleMode && !recording ? 'h-[450px]' : 'h-[450px]'} shadow-sm rounded-2xl border border-gray-100 overflow-hidden`}>
            {/* Leaflet hook element */}
           <div id="leaflet-map-element" ref={mapContainerRef} className="h-full w-full" />
+
+          {/* Calidad de la señal GPS. Sin esto, una ubicación por antena
+              (sin satélites) parece una ubicación exacta en el mapa. */}
+          {!geolocationError && (
+            <div
+              className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full shadow-md border text-[10px] font-bold whitespace-nowrap ${
+                gpsQuality === 'alta' ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : gpsQuality === 'media' ? 'bg-amber-50 border-amber-200 text-amber-700'
+                  : gpsQuality === 'baja' ? 'bg-red-50 border-red-200 text-red-700'
+                  : 'bg-white border-gray-200 text-gray-500'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  gpsQuality === 'alta' ? 'bg-emerald-500'
+                    : gpsQuality === 'media' ? 'bg-amber-500'
+                    : gpsQuality === 'baja' ? 'bg-red-500'
+                    : 'bg-gray-400 animate-pulse'
+                }`}
+              />
+              {gpsAccuracy === null
+                ? 'Buscando GPS…'
+                : `${gpsQuality === 'baja' ? 'GPS aproximado' : gpsQuality === 'media' ? 'GPS regular' : 'GPS preciso'} · ±${Math.round(gpsAccuracy)} m`}
+            </div>
+          )}
+
+          {/* Aviso de ubicación aproximada: pasa cuando el navegador tiene el
+              permiso de ubicación en "aproximada" o el GPS no tomó señal. */}
+          {poorAccuracy && !geolocationError && (
+            <div className="absolute top-14 left-4 right-4 z-20 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-[11px] leading-snug flex items-start gap-2 shadow-md">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <strong>Ubicación aproximada (±{Math.round(gpsAccuracy || 0)} m).</strong>{' '}
+                El GPS todavía no tomó señal, así que el punto azul es una
+                estimación por antena. Salí a cielo abierto y revisá que el
+                permiso de ubicación del sitio sea <strong>“Precisa”</strong>.
+              </div>
+            </div>
+          )}
 
           {/* Overlay de Modo Simple cuando NO está grabando */}
           {simpleMode && !recording && (
@@ -750,8 +817,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
             </div>
           )}
 
-          {/* Aviso de desvío: sólo mientras se graba, para no alertar de más */}
-          {recording && offRouteDistance !== null && offRouteDistance > 40 && (
+          {/* Aviso de desvío: sólo mientras se graba, para no alertar de más.
+              Se exige buena precisión: con una lectura por antena (±1 km)
+              avisaría "fuera del sendero" sin que sea cierto. */}
+          {recording && offRouteDistance !== null && offRouteDistance > 40 && gpsAccuracy !== null && gpsAccuracy <= 50 && (
             <div className={`absolute ${geolocationError ? 'top-20' : 'top-4'} left-4 right-4 z-20 p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center gap-2.5 shadow-md`}>
               <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
               <div className="flex-1">
@@ -766,7 +835,9 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3.5 py-2 bg-white/95 backdrop-blur-md rounded-full shadow-lg border border-gray-100 max-w-[calc(100%-2rem)]">
               <span
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                  navInfo.distance < 15 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-600 text-white'
+                  navInfo.distance < 15 ? 'bg-emerald-100 text-emerald-700'
+                    : poorAccuracy ? 'bg-amber-500 text-white'
+                    : 'bg-blue-600 text-white'
                 }`}
               >
                 {navInfo.distance < 15 ? (
@@ -787,6 +858,11 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                     ? 'Estás sobre el sendero'
                     : `${Math.round(navInfo.distance)} m al ${cardinalName(navInfo.bearing)}`}
                 </span>
+                {poorAccuracy && navInfo.distance >= 15 && (
+                  <span className="block text-[9px] font-bold text-amber-600">
+                    Distancia estimada: GPS impreciso
+                  </span>
+                )}
               </div>
             </div>
           )}
