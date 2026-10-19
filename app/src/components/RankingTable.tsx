@@ -137,6 +137,7 @@ export default function RankingTable({ refreshTrigger }: RankingTableProps) {
       let nameIdx = headers.findIndex(h => h.includes('nombre') || h.includes('apodo'));
       let trailIdx = headers.findIndex(h => h.includes('sendero') || h.includes('recorrido'));
       let timeMinutesIdx = headers.findIndex(h => h.includes('tiempo') && h.includes('minuto'));
+      let timeSecondsIdx = headers.findIndex(h => h.includes('tiempo') && h.includes('segundo'));
       let dateIdx = headers.findIndex(h => h.includes('fecha') && h.includes('recorrido'));
       let hourIdx = headers.findIndex(h => h.includes('hora') && h.includes('inicio'));
       let categoryIdx = headers.findIndex(h => h.includes('categor'));
@@ -175,10 +176,19 @@ export default function RankingTable({ refreshTrigger }: RankingTableProps) {
           }
         }
 
-        // El tiempo puede venir en minutos (entero o con decimales) o ya en
-        // "hh:mm:ss": lo pasamos siempre a "hh:mm:ss" para mostrar y ordenar.
+        // El tiempo puede venir en minutos (entero o con decimales), en dos
+        // columnas (minutos + segundos) o ya en "hh:mm:ss": lo pasamos siempre
+        // a "hh:mm:ss" para mostrar y ordenar.
         let timeValue = '00:00:00';
-        const totalSeconds = cellToSeconds(columns[timeMinutesIdx] || '');
+        let totalSeconds = cellToSeconds(columns[timeMinutesIdx] || '');
+        if (timeSecondsIdx !== -1) {
+          // La planilla nueva guarda los segundos en su propia columna.
+          const mins = Number((columns[timeMinutesIdx] || '').trim().replace(',', '.'));
+          const secs = Number((columns[timeSecondsIdx] || '').trim().replace(',', '.'));
+          if (!isNaN(mins) || !isNaN(secs)) {
+            totalSeconds = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
+          }
+        }
         if (totalSeconds !== null && totalSeconds > 0) {
           timeValue = secondsToClock(totalSeconds);
         }

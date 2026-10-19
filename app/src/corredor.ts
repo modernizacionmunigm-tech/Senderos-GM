@@ -56,6 +56,27 @@ export function secondsToMinutesValue(secs: number): string {
   return (Math.round((secs / 60) * 1000) / 1000).toFixed(3);
 }
 
+/**
+ * ¿El Formulario ya tiene la pregunta "Tiempo (segundos)"? Si está, el tiempo
+ * va en dos columnas limpias (12 y 31). Si no, va en una sola con minutos y
+ * decimales, para no perder los segundos.
+ */
+export function tienePreguntaDeSegundos(): boolean {
+  return Boolean(GOOGLE_FORM_CONFIG.entries.tiempoSegundos);
+}
+
+/** Lo que va en la columna "Tiempo (minutos)". */
+export function minutosValue(secs: number): string {
+  const total = Math.max(0, Math.round(secs));
+  if (tienePreguntaDeSegundos()) return String(Math.floor(total / 60));
+  return secondsToMinutesValue(total);
+}
+
+/** Lo que va en la columna "Tiempo (segundos)" (0 a 59). */
+export function segundosValue(secs: number): string {
+  return String(Math.max(0, Math.round(secs)) % 60);
+}
+
 export interface MarkPayload {
   name: string;
   trailName: string;
@@ -108,7 +129,10 @@ function buildBody(payload: MarkPayload): URLSearchParams {
   const body = new URLSearchParams();
   body.set(entries.nombre, payload.name);
   body.set(entries.sendero, payload.trailName);
-  body.set(entries.tiempo, secondsToMinutesValue(payload.seconds));
+  body.set(entries.tiempo, minutosValue(payload.seconds));
+  if (entries.tiempoSegundos) {
+    body.set(entries.tiempoSegundos, segundosValue(payload.seconds));
+  }
   body.set(entries.fechaYear, year || '');
   body.set(entries.fechaMonth, month || '');
   body.set(entries.fechaDay, day || '');

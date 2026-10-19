@@ -18,7 +18,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { TRAILS, CATEGORIES, GOOGLE_FORM_CONFIG } from '../data';
-import { buildComments } from '../corredor';
+import { buildComments, formatSeconds, minutosValue, segundosValue, tienePreguntaDeSegundos } from '../corredor';
 
 interface TimeFormProps {
   onTimeAdded: () => void;
@@ -31,6 +31,9 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
   const [nombre, setNombre] = useState('');
   const [sendero, setSendero] = useState('Monte Mitre - Dificultad Baja');
   const [tiempoMinutos, setTiempoMinutos] = useState<number>(30);
+  const [tiempoSegundos, setTiempoSegundos] = useState<number>(0);
+  /** El tiempo siempre se maneja en segundos, que es lo que entiende la tabla. */
+  const totalSegundos = tiempoMinutos * 60 + tiempoSegundos;
   const [clima, setClima] = useState('Soleado');
   const [comentarios, setComentarios] = useState('');
   const [terminosAceptados, setTerminosAceptados] = useState(true);
@@ -77,13 +80,8 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
   const [fechaYear, fechaMonth, fechaDay] = fecha ? fecha.split('-') : ['', '', ''];
   const [horaHour, horaMinute] = horaInicio ? horaInicio.split(':') : ['', ''];
 
-  // Convert minutes into HH:MM:SS for local Leaderboard compliance
-  const getFormattedTimeForLocalList = (): string => {
-    const hh = String(Math.floor(tiempoMinutos / 60)).padStart(2, '0');
-    const mm = String(tiempoMinutos % 60).padStart(2, '0');
-    const ss = '00';
-    return `${hh}:${mm}:${ss}`;
-  };
+  // Convertir el tiempo a HH:MM:SS para la tabla
+  const getFormattedTimeForLocalList = (): string => formatSeconds(totalSegundos);
 
   const getFormattedDateToDisplay = (dateStr: string): string => {
     if (!dateStr) return '';
@@ -98,6 +96,11 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
     if (!terminosAceptados) {
       e.preventDefault();
       alert('Debes aceptar los términos para aparecer en la clasificación pública.');
+      return;
+    }
+    if (totalSegundos <= 0) {
+      e.preventDefault();
+      alert('Poné cuánto tardaste: los minutos y los segundos.');
       return;
     }
     triggerVibrate(60);
@@ -169,7 +172,7 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
             <p className="text-amber-400 font-extrabold uppercase tracking-wider text-[9px] mb-1">DETALLE DE MARCA VALIDADA</p>
             <p><span className="text-zinc-500">CORREDOR:</span> {nombre}</p>
             <p><span className="text-zinc-500">SENDERO:</span> {sendero}</p>
-            <p><span className="text-zinc-500">TIEMPO:</span> {tiempoMinutos} min ({getFormattedTimeForLocalList()})</p>
+            <p><span className="text-zinc-500">TIEMPO:</span> {tiempoMinutos} min {tiempoSegundos} s ({getFormattedTimeForLocalList()})</p>
             <p><span className="text-zinc-500">CLIMA:</span> {clima}</p>
             <p><span className="text-zinc-500">HORA INICIO:</span> {horaInicio}</p>
             <p><span className="text-zinc-500">FECHA:</span> {getFormattedDateToDisplay(fecha)}</p>
@@ -183,6 +186,7 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 setSuccess(false);
                 setNombre('');
                 setTiempoMinutos(30);
+                setTiempoSegundos(0);
                 setComentarios('');
               }}
               className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold rounded-xl transition-all active:scale-95 cursor-pointer"
@@ -289,25 +293,59 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 </select>
               </div>
 
-              {/* Tiempo Total en minutos (entry.236869142) */}
+              {/* Tiempo: minutos y segundos. La planilla los guarda en dos
+                  columnas (o en minutos con decimales mientras la pregunta de
+                  segundos no exista en el Formulario). */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-blue-600" />
-                  Tiempo total (minutos)
+                  Tiempo total
                 </label>
-                <input
-                  type="number"
-                  id="tiempo"
-                  name={GOOGLE_FORM_CONFIG.entries.tiempo}
-                  value={tiempoMinutos}
-                  onChange={(e) => setTiempoMinutos(Math.max(1, parseInt(e.target.value) || 0))}
-                  placeholder="Ej: 45"
-                  min="1"
-                  max="999"
-                  required
-                  className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-gray-800"
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="tiempo"
+                      value={tiempoMinutos}
+                      onChange={(e) => setTiempoMinutos(Math.min(999, Math.max(0, parseInt(e.target.value) || 0)))}
+                      placeholder="0"
+                      min="0"
+                      max="999"
+                      aria-label="Minutos"
+                      className="w-full pl-3 pr-12 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-gray-800"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 uppercase pointer-events-none">min</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="tiempo-segundos"
+                      value={tiempoSegundos}
+                      onChange={(e) => setTiempoSegundos(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+                      placeholder="0"
+                      min="0"
+                      max="59"
+                      aria-label="Segundos"
+                      className="w-full pl-3 pr-12 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-gray-800"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 uppercase pointer-events-none">seg</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Lo que se manda al Formulario */}
+              <input
+                type="hidden"
+                name={GOOGLE_FORM_CONFIG.entries.tiempo}
+                value={minutosValue(totalSegundos)}
+              />
+              {tienePreguntaDeSegundos() && (
+                <input
+                  type="hidden"
+                  name={GOOGLE_FORM_CONFIG.entries.tiempoSegundos}
+                  value={segundosValue(totalSegundos)}
+                />
+              )}
 
               {/* Fecha del recorrido */}
               <div className="space-y-1.5">
