@@ -22,5 +22,9 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "src/Untitled-1.js",
+    "src/Untitled-3.js"
+  ]
 }
