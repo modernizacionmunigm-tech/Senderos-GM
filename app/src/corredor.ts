@@ -97,13 +97,12 @@ interface QueuedMark extends MarkPayload {
 }
 
 /**
- * Los comentarios que van a la planilla. El tiempo exacto y la categoría se
- * anotan ahí con una etiqueta legible: así no se pierden (la planilla no tiene
- * columnas propias para eso) y la tabla puede leerlos.
+ * Los comentarios que van a la planilla: la categoría (la planilla no tiene
+ * columna propia para eso) y lo que escribió la persona. El tiempo ya va
+ * exacto en sus dos columnas, así que no hace falta anotarlo acá.
  */
-export function buildComments(opts: { seconds?: number; category?: string; userComment?: string }): string {
+export function buildComments(opts: { category?: string; userComment?: string }): string {
   const parts: string[] = [];
-  if (opts.seconds) parts.push(`Tiempo exacto: ${formatSeconds(opts.seconds)} (cronómetro GPS).`);
   if (opts.category) parts.push(`Categoría: ${opts.category}.`);
   if (opts.userComment && opts.userComment.trim()) parts.push(opts.userComment.trim());
   return parts.join(' ');
@@ -142,7 +141,6 @@ function buildBody(payload: MarkPayload): URLSearchParams {
   body.set(
     entries.comentarios,
     buildComments({
-      seconds: payload.seconds,
       category: payload.category,
       userComment: payload.comments,
     })
