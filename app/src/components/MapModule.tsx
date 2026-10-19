@@ -9,6 +9,7 @@ import {
   Square,
   MapPin,
   Compass,
+  Navigation,
   Layers,
   Activity,
   Crosshair,
@@ -35,6 +36,62 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c; // in metres
 }
 
+// Punto más cercano del trazado y distancia al mismo (sirve para el aviso de
+// desvío y para orientar la brújula). Mide contra los tramos, no sólo contra
+// los vértices, para que sea preciso.
+function nearestPointOnPath(lat: number, lng: number, path: [number, number][]) {
+  if (path.length === 0) return null;
+  if (path.length === 1) {
+    return {
+      lat: path[0][0],
+      lng: path[0][1],
+      distance: calculateDistance(lat, lng, path[0][0], path[0][1]),
+    };
+  }
+
+  const mPerDegLat = 111320;
+  const mPerDegLon = 111320 * Math.cos((lat * Math.PI) / 180);
+  const px = lng * mPerDegLon;
+  const py = lat * mPerDegLat;
+  let best = Infinity;
+  let bestLat = path[0][0];
+  let bestLng = path[0][1];
+
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1];
+    const b = path[i];
+    const ax = a[1] * mPerDegLon, ay = a[0] * mPerDegLat;
+    const bx = b[1] * mPerDegLon, by = b[0] * mPerDegLat;
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+    if (d < best) {
+      best = d;
+      bestLat = a[0] + (b[0] - a[0]) * t;
+      bestLng = a[1] + (b[1] - a[1]) * t;
+    }
+  }
+
+  return { lat: bestLat, lng: bestLng, distance: best };
+}
+
+// Rumbo inicial (grados desde el norte) para orientar la flecha de la brújula
+function bearingBetween(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const dLambda = ((lng2 - lng1) * Math.PI) / 180;
+  const y = Math.sin(dLambda) * Math.cos(phi2);
+  const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLambda);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+const CARDINALS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+function cardinalName(deg: number) {
+  return CARDINALS[Math.round(deg / 45) % 8];
+}
+
 interface MapModuleProps {
   selectedTrailId: string | null;
   onSelectTrail: (trailId: string | null) => void;
@@ -52,17 +109,30 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const markersGroupRef = useRef<L.FeatureGroup | null>(null);
   const recordingGroupRef = useRef<L.FeatureGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
+  const accuracyCircleRef = useRef<L.Circle | null>(null);
+  const wakeLockRef = useRef<any>(null);
+
+  // Refs espejo: permiten que el watchPosition lea el estado actual sin
+  // reiniciarse en cada lectura (reiniciarlo borraba el recorrido grabado).
+  const userCoordsRef = useRef<[number, number] | null>(null);
+  const selectedTrailIdRef = useRef<string | null>(selectedTrailId);
+  const recordingRef = useRef(false);
+  const followUserRef = useRef(false);
+  const lastCheckpointRef = useRef(-1);
 
   // States
   const [mapType, setMapType] = useState<'street' | 'satellite'>('street');
   const [recording, setRecording] = useState(false);
   const [recordPath, setRecordPath] = useState<[number, number][]>([]);
-  const [recordStartTime, setRecordStartTime] = useState<number | null>(null);
   const [totalDistance, setTotalDistance] = useState(0); // in meters
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
   const [geolocationError, setGeolocationError] = useState<string | null>(null);
+  const [offRouteDistance, setOffRouteDistance] = useState<number | null>(null);
+  // Brújula: distancia y rumbo al punto más cercano del sendero elegido
+  const [navInfo, setNavInfo] = useState<{ distance: number; bearing: number } | null>(null);
+  const [followUser, setFollowUser] = useState(false);
   const [savedRoutes, setSavedRoutes] = useState<any[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   
@@ -72,8 +142,26 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const [lastCheckpointIndex, setLastCheckpointIndex] = useState(-1);
   const [checkpointMessage, setCheckpointMessage] = useState<string | null>(null);
 
-  const hapticIdRef = useRef<number | null>(null);
-  const recordingIntervalRef = useRef<any>(null);
+  useEffect(() => { userCoordsRef.current = userCoords; }, [userCoords]);
+  useEffect(() => { recordingRef.current = recording; }, [recording]);
+  useEffect(() => { followUserRef.current = followUser; }, [followUser]);
+  useEffect(() => {
+    selectedTrailIdRef.current = selectedTrailId;
+    lastCheckpointRef.current = -1;
+    setLastCheckpointIndex(-1);
+    const coords = userCoordsRef.current;
+    if (coords && selectedTrailId) {
+      const trail = TRAILS.find(t => t.id === selectedTrailId);
+      const nearest = trail ? nearestPointOnPath(coords[0], coords[1], trail.coordinates) : null;
+      setOffRouteDistance(nearest ? nearest.distance : null);
+      setNavInfo(nearest
+        ? { distance: nearest.distance, bearing: bearingBetween(coords[0], coords[1], nearest.lat, nearest.lng) }
+        : null);
+    } else {
+      setOffRouteDistance(null);
+      setNavInfo(null);
+    }
+  }, [selectedTrailId]);
 
   useEffect(() => {
     try {
@@ -84,9 +172,9 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     }
   }, []);
 
-  const triggerVibrate = (ms: number = 40) => {
+  const triggerVibrate = (pattern: number | number[] = 40) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(ms);
+      navigator.vibrate(pattern);
     }
   };
 
@@ -136,22 +224,6 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     // Zoom controls at bottom right
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Request initial position quietly
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude, accuracy } = pos.coords;
-          setUserCoords([latitude, longitude]);
-          setGpsAccuracy(accuracy);
-          updateUserMarker(latitude, longitude, accuracy);
-        },
-        (err) => {
-          console.warn('Geolocation warning on startup:', err);
-        },
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
-    }
-
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -195,9 +267,14 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
       });
 
       // 2. Draw Points of Interest (Solo referencia visual con NÚMEROS)
-      trail.pointsOfInterest.forEach((poi, pIdx) => {
+      // El inicio (▶) y la meta (■) no consumen número: si no, el punto 1
+      // quedaba "afuera" de la numeración (se mostraba recién el 2).
+      let poiNumber = 0;
+      trail.pointsOfInterest.forEach((poi) => {
+        if (poi.type !== 'inicio' && poi.type !== 'fin') poiNumber += 1;
+
         // Icono con número para checkpoints, ícono especial para inicio/fin
-        let iconContent = String(pIdx + 1);
+        let iconContent = poiNumber ? String(poiNumber) : '';
         let iconColor = trail.color;
         
         if (poi.type === 'inicio') {
@@ -246,11 +323,25 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     }
   }, [selectedTrailId]);
 
-  // Handle active user custom marker
+  // Handle active user custom marker + círculo de precisión GPS
   const updateUserMarker = (lat: number, lng: number, accuracy: number) => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    
+
+    const radius = Math.max(accuracy, 5);
+    if (accuracyCircleRef.current) {
+      accuracyCircleRef.current.setLatLng([lat, lng]).setRadius(radius);
+    } else {
+      accuracyCircleRef.current = L.circle([lat, lng], {
+        radius,
+        color: '#3b82f6',
+        weight: 1,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.08,
+        interactive: false,
+      }).addTo(map);
+    }
+
     const userHtml = `
       <div id="user-location-ping" class="relative flex items-center justify-center w-6 h-6">
         <span class="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-65 animate-ping"></span>
@@ -270,26 +361,60 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     } else {
       userMarkerRef.current = L.marker([lat, lng], { icon: userIcon }).addTo(map);
     }
+
+    if (followUserRef.current) {
+      map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate: true });
+    }
+  };
+
+  // Distancia al sendero seleccionado: sirve para avisar si te alejás y para la brújula
+  const updateOffRouteDistance = (lat: number, lng: number) => {
+    const trailId = selectedTrailIdRef.current;
+    if (!trailId) {
+      setOffRouteDistance(null);
+      setNavInfo(null);
+      return;
+    }
+    const trail = TRAILS.find(t => t.id === trailId);
+    if (!trail) {
+      setOffRouteDistance(null);
+      setNavInfo(null);
+      return;
+    }
+    const nearest = nearestPointOnPath(lat, lng, trail.coordinates);
+    setOffRouteDistance(nearest ? nearest.distance : null);
+    setNavInfo(nearest
+      ? { distance: nearest.distance, bearing: bearingBetween(lat, lng, nearest.lat, nearest.lng) }
+      : null);
   };
 
   // Check proximity to next checkpoint (validación pasiva, sin QR)
-  const checkCheckpointProximity = () => {
-    if (!selectedTrailId || !userCoords) return false;
-    
-    const trail = TRAILS.find(t => t.id === selectedTrailId);
+  const checkCheckpointProximity = (coords: [number, number]) => {
+    const trailId = selectedTrailIdRef.current;
+    if (!trailId) return false;
+
+    const trail = TRAILS.find(t => t.id === trailId);
     if (!trail) return false;
 
-    // Encontrar el siguiente checkpoint
-    const nextPoiIndex = lastCheckpointIndex + 1;
+    // Encontrar el siguiente checkpoint (el inicio no cuenta como checkpoint)
+    let nextPoiIndex = lastCheckpointRef.current + 1;
+    while (nextPoiIndex < trail.pointsOfInterest.length && trail.pointsOfInterest[nextPoiIndex].type === 'inicio') {
+      nextPoiIndex += 1;
+    }
     if (nextPoiIndex >= trail.pointsOfInterest.length) return false; // Ya terminaste
 
     const nextPoi = trail.pointsOfInterest[nextPoiIndex];
-    const distanceToPoi = calculateDistance(userCoords[0], userCoords[1], nextPoi.lat, nextPoi.lng);
+    const distanceToPoi = calculateDistance(coords[0], coords[1], nextPoi.lat, nextPoi.lng);
 
     // Radio de 30 metros para considerar que pasaste
     if (distanceToPoi < 30) {
+      lastCheckpointRef.current = nextPoiIndex;
       setLastCheckpointIndex(nextPoiIndex);
-      setCheckpointMessage(`✅ ¡Pasaste por el punto ${nextPoiIndex + 1}: ${nextPoi.name}!`);
+      const poiNumber = trail.pointsOfInterest
+        .slice(0, nextPoiIndex + 1)
+        .filter((p) => p.type !== 'inicio' && p.type !== 'fin').length;
+      const label = nextPoi.type === 'fin' ? 'la meta' : `el punto ${poiNumber}`;
+      setCheckpointMessage(`✅ ¡Pasaste por ${label}: ${nextPoi.name}!`);
       setTimeout(() => setCheckpointMessage(null), 4000);
       triggerVibrate([100, 50, 100]);
       return true;
@@ -297,77 +422,101 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     return false;
   };
 
-  // Live Location watch listener during active GPS Track Recording
+  // GPS en vivo: una sola suscripción mientras el mapa está abierto.
+  // Antes este efecto dependía de userCoords y se reiniciaba en cada lectura,
+  // borrando el recorrido y la distancia acumulada.
   useEffect(() => {
-    if (!recording) {
-      if (hapticIdRef.current !== null) {
-        navigator.geolocation.clearWatch(hapticIdRef.current);
-        hapticIdRef.current = null;
-      }
+    if (!navigator.geolocation) {
+      setGeolocationError('Este dispositivo no tiene GPS disponible');
       return;
     }
 
-    setGeolocationError(null);
-    setRecordStartTime(Date.now());
-    setRecordPath([]);
-    setTotalDistance(0);
-    setLastCheckpointIndex(-1);
-    setShowCheckpointBtn(true); // Mostrar botón de check-in al iniciar
-
     const handleSuccess = (pos: GeolocationPosition) => {
       const { latitude, longitude, accuracy } = pos.coords;
-      const accurate = accuracy && accuracy < 60;
-      
+      const coords: [number, number] = [latitude, longitude];
+
       setGpsAccuracy(accuracy);
-      setUserCoords([latitude, longitude]);
+      setUserCoords(coords);
       updateUserMarker(latitude, longitude, accuracy);
+      updateOffRouteDistance(latitude, longitude);
+      setGeolocationError(null);
 
-      // Verificar si pasó por un checkpoint automáticamente (sin QR)
-      checkCheckpointProximity();
+      if (recordingRef.current) {
+        checkCheckpointProximity(coords);
 
-      setRecordPath((prev) => {
-        const nextPath = [...prev, [latitude, longitude] as [number, number]];
-        
-        if (prev.length > 0) {
-          const last = prev[prev.length - 1];
-          const increment = calculateDistance(last[0], last[1], latitude, longitude);
-          
-          if (increment > 1.5) {
-            setTotalDistance((dist) => dist + increment);
+        setRecordPath((prev) => {
+          const nextPath = [...prev, coords];
+
+          if (prev.length > 0) {
+            const last = prev[prev.length - 1];
+            const increment = calculateDistance(last[0], last[1], latitude, longitude);
+
+            // Ignoramos el ruido GPS y las lecturas muy imprecisas
+            if (increment > 2 && accuracy < 50) {
+              setTotalDistance((dist) => dist + increment);
+            }
           }
-        }
-        return nextPath;
-      });
+          return nextPath;
+        });
+      }
     };
 
     const handleError = (err: GeolocationPositionError) => {
-      console.error('GPS Watch registration error:', err);
       let message = 'Acceso GPS Denegado';
       if (err.code === err.POSITION_UNAVAILABLE) message = 'Señal GPS no disponible';
-      if (err.code === err.TIMEOUT) message = 'Se agotó tiempo de GPS';
+      if (err.code === err.TIMEOUT) message = 'Se agotó el tiempo de espera del GPS';
       setGeolocationError(message);
     };
 
-    hapticIdRef.current = navigator.geolocation.watchPosition(
-      handleSuccess, 
-      handleError,
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
-    );
+    const watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 2000,
+    });
 
-    recordingIntervalRef.current = setInterval(() => {
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  // Cronómetro del recorrido
+  useEffect(() => {
+    if (!recording) return;
+    const intervalId = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
+    return () => clearInterval(intervalId);
+  }, [recording]);
 
-    return () => {
-      if (hapticIdRef.current !== null) {
-        navigator.geolocation.clearWatch(hapticIdRef.current);
-        hapticIdRef.current = null;
-      }
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
+  // Mantener la pantalla encendida mientras se graba (si el navegador lo permite)
+  useEffect(() => {
+    if (!recording) return;
+
+    let cancelled = false;
+    const requestWakeLock = async () => {
+      try {
+        const nav = navigator as Navigator & { wakeLock?: { request: (type: string) => Promise<any> } };
+        if (nav.wakeLock && document.visibilityState === 'visible') {
+          wakeLockRef.current = await nav.wakeLock.request('screen');
+        }
+      } catch (e) {
+        console.warn('No se pudo mantener la pantalla encendida:', e);
       }
     };
-  }, [recording, selectedTrailId, userCoords]);
+
+    requestWakeLock();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !cancelled) requestWakeLock();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (wakeLockRef.current) {
+        try { wakeLockRef.current.release?.(); } catch (e) { /* noop */ }
+        wakeLockRef.current = null;
+      }
+    };
+  }, [recording]);
 
   // Draw active recorded coordinate tracking path on the fly
   useEffect(() => {
@@ -398,6 +547,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
           setUserCoords([latitude, longitude]);
           setGpsAccuracy(accuracy);
           updateUserMarker(latitude, longitude, accuracy);
+          updateOffRouteDistance(latitude, longitude);
           if (mapInstanceRef.current) {
             mapInstanceRef.current.setView([latitude, longitude], 16);
           }
@@ -415,6 +565,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     setRecordPath([]);
     setTotalDistance(0);
     setElapsedSeconds(0);
+    lastCheckpointRef.current = -1;
+    setLastCheckpointIndex(-1);
+    setCheckpointMessage(null);
+    setShowCheckpointBtn(true);
     setRecording(true);
   };
 
@@ -422,6 +576,9 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     triggerVibrate(100);
     setRecording(false);
     setShowCheckpointBtn(false);
+    lastCheckpointRef.current = -1;
+    setLastCheckpointIndex(-1);
+    setCheckpointMessage(null);
     
     // Save recorded trace locally
     if (recordPath.length > 1) {
@@ -502,10 +659,11 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                  onClick={() => {
                    triggerVibrate(50);
                    // Verificar proximidad manualmente o registrar pase
-                   if(checkCheckpointProximity()) {
-                     // Ya mostró mensaje
+                   const coords = userCoordsRef.current;
+                   if (coords && checkCheckpointProximity(coords)) {
+                     // Ya mostró el mensaje de checkpoint superado
                    } else {
-                     setCheckpointMessage("📍 Ubicación registrada (Lejos de checkpoint)");
+                     setCheckpointMessage("📍 Ubicación registrada (lejos del próximo checkpoint)");
                      setTimeout(() => setCheckpointMessage(null), 3000);
                    }
                  }}
@@ -559,12 +717,76 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
             <Crosshair className="w-5 h-5" />
           </button>
 
+          {/* Seguir mi ubicación (modo seguimiento) */}
+          <button
+            id="btn-gps-follow"
+            onClick={() => {
+              const next = !followUser;
+              triggerVibrate();
+              setFollowUser(next);
+              followUserRef.current = next;
+              const coords = userCoordsRef.current;
+              if (next && coords && mapInstanceRef.current) {
+                mapInstanceRef.current.setView(coords, Math.max(mapInstanceRef.current.getZoom(), 16), { animate: true });
+              }
+            }}
+            className={`absolute bottom-16 left-4 z-20 p-3 rounded-full shadow-lg border transition-colors flex items-center justify-center cursor-pointer ${
+              followUser
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-white text-emerald-600 border-gray-100 hover:bg-emerald-50'
+            }`}
+            title={followUser ? 'Dejar de seguir mi ubicación' : 'Seguir mi ubicación'}
+          >
+            <Navigation className="w-5 h-5" />
+          </button>
+
           {/* Geolocation notifications overlay */}
           {geolocationError && (
             <div className="absolute top-4 left-4 right-4 z-20 p-3.5 bg-red-50 border border-red-200 text-red-900 rounded-xl text-xs flex items-center gap-2.5 shadow-md">
               <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
               <div className="flex-1">
                 <strong>GPS: </strong>{geolocationError}
+              </div>
+            </div>
+          )}
+
+          {/* Aviso de desvío: sólo mientras se graba, para no alertar de más */}
+          {recording && offRouteDistance !== null && offRouteDistance > 40 && (
+            <div className={`absolute ${geolocationError ? 'top-20' : 'top-4'} left-4 right-4 z-20 p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center gap-2.5 shadow-md`}>
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+              <div className="flex-1">
+                <strong>Fuera del sendero: </strong>
+                estás a {Math.round(offRouteDistance)} m del trazado.
+              </div>
+            </div>
+          )}
+
+          {/* Brújula al sendero: flecha y distancia al punto más cercano del trazado */}
+          {!simpleMode && selectedTrailId && navInfo && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3.5 py-2 bg-white/95 backdrop-blur-md rounded-full shadow-lg border border-gray-100 max-w-[calc(100%-2rem)]">
+              <span
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                  navInfo.distance < 15 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-600 text-white'
+                }`}
+              >
+                {navInfo.distance < 15 ? (
+                  <CheckCircle2 className="w-4.5 h-4.5" />
+                ) : (
+                  <Navigation
+                    className="w-4.5 h-4.5"
+                    style={{ transform: `rotate(${navInfo.bearing - 45}deg)` }}
+                  />
+                )}
+              </span>
+              <div className="leading-tight min-w-0">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                  Brújula al sendero
+                </span>
+                <span className="block text-xs font-extrabold text-gray-800 truncate">
+                  {navInfo.distance < 15
+                    ? 'Estás sobre el sendero'
+                    : `${Math.round(navInfo.distance)} m al ${cardinalName(navInfo.bearing)}`}
+                </span>
               </div>
             </div>
           )}
@@ -591,7 +813,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
 
           <div className="flex flex-wrap items-center gap-4">
             {recording && (
-              <div id="gps-stats-display" className="grid grid-cols-2 gap-4 bg-red-50/50 p-2.5 rounded-xl border border-red-200/20 text-center text-xs">
+              <div id="gps-stats-display" className="grid grid-cols-3 gap-3 bg-red-50/50 p-2.5 rounded-xl border border-red-200/20 text-center text-xs">
                 <div>
                   <span className="text-[10px] text-red-700/60 font-semibold block">DURACIÓN</span>
                   <span className="font-extrabold text-red-900 font-mono text-sm">{formatTime(elapsedSeconds)}</span>
@@ -599,6 +821,12 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                 <div>
                   <span className="text-[10px] text-red-700/60 font-semibold block">DISTANCIA</span>
                   <span className="font-extrabold text-red-900 font-mono text-sm">{(totalDistance / 1000).toFixed(2)} km</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-red-700/60 font-semibold block">DESVÍO</span>
+                  <span className={`font-extrabold font-mono text-sm ${offRouteDistance !== null && offRouteDistance > 40 ? 'text-amber-700' : 'text-red-900'}`}>
+                    {offRouteDistance !== null ? `${Math.round(offRouteDistance)} m` : '—'}
+                  </span>
                 </div>
               </div>
             )}
