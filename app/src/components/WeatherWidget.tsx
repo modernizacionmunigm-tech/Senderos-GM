@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Cloud, Sun, CloudRain, Wind, Droplets, RefreshCw } from 'lucide-react';
 import { WeatherData } from '../types';
+import { GUARDIA_MITRE_CENTER } from '../data';
 
 export default function WeatherWidget() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -16,14 +17,17 @@ export default function WeatherWidget() {
     setLoading(true);
     setError(false);
     try {
-      // Coordinates for Guardia Mitre: -40.4357, -62.7230
-      const url = 'https://api.open-meteo.com/v1/forecast?latitude=-40.4357&longitude=-62.7230&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=America/Argentina/Salta';
+      // Las coordenadas del pueblo (no las del sendero): es el dato que le
+      // interesa a quien va a salir. Antes apuntaban ~90 km al este.
+      const [lat, lng] = GUARDIA_MITRE_CENTER;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&timezone=America%2FArgentina%2FSalta`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('API failed');
       const data = await response.json();
       
       const current = data.current;
       const code = current.weather_code;
+      const precip = Number(current.precipitation) || 0;
       
       // Map WMO codes to descriptions & icons
       let condition = 'Despejado';
@@ -49,24 +53,26 @@ export default function WeatherWidget() {
         icon = 'cloud';
       }
 
+      // El código puede quedar corto en lloviznas finas: si está precipitando,
+      // manda la precipitación medida.
+      if (precip > 0) {
+        condition = precip >= 0.5 ? 'Lluvia' : 'Llovizna';
+        icon = 'rain';
+      }
+
       setWeather({
         temp: Math.round(current.temperature_2m),
         condition,
         icon,
         humidity: current.relative_humidity_2m,
         windSpeed: Math.round(current.wind_speed_10m),
+        observedAt: String(current.time || '').slice(11, 16) || undefined,
       });
     } catch (e) {
       console.error('Error fetching weather:', e);
+      // Sin datos no inventamos un clima: se muestra que no se pudo.
+      setWeather(null);
       setError(true);
-      // Reasonable fallbacks for Guardia Mitre (Autumn/Winter in June etc.)
-      setWeather({
-        temp: 14,
-        condition: 'Templado Estepario (Estacional)',
-        icon: 'sun',
-        humidity: 55,
-        windSpeed: 18,
-      });
     } finally {
       setLoading(false);
     }
@@ -74,6 +80,9 @@ export default function WeatherWidget() {
 
   useEffect(() => {
     fetchWeather();
+    // El clima cambia: cada 10 minutos se vuelve a consultar.
+    const timer = window.setInterval(fetchWeather, 10 * 60 * 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const triggerVibration = () => {
@@ -101,10 +110,20 @@ export default function WeatherWidget() {
           <span className="text-xs font-semibold tracking-wider text-emerald-700 uppercase block font-display">Clima en Guardia Mitre</span>
           {loading ? (
             <p className="text-sm text-gray-500">Cargando condiciones en vivo...</p>
+          ) : !weather ? (
+            <p className="text-sm text-gray-500">
+              No pudimos consultar el clima. Probá con el botón de actualizar.
+            </p>
           ) : (
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-800 font-display">{weather?.temp}°C</span>
-              <span className="text-sm font-medium text-gray-600">{weather?.condition}</span>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-gray-800 font-display">{weather.temp}°C</span>
+                <span className="text-sm font-medium text-gray-600">{weather.condition}</span>
+              </div>
+              <span className="text-[10px] text-gray-400">
+                Según Open-Meteo
+                {weather.observedAt ? ` · dato de las ${weather.observedAt}` : ''}
+              </span>
             </div>
           )}
         </div>
@@ -115,7 +134,7 @@ export default function WeatherWidget() {
           <Wind className="w-4 h-4 text-emerald-600" />
           <div>
             <span className="text-xs text-gray-400 block">Viento</span>
-            <span className="font-semibold font-mono">{loading ? '--' : `${weather?.windSpeed} km/h`}</span>
+            <span className="font-semibold font-mono">{loading || !weather ? '--' : `${weather.windSpeed} km/h`}</span>
           </div>
         </div>
         
@@ -123,7 +142,7 @@ export default function WeatherWidget() {
           <Droplets className="w-4 h-4 text-emerald-600" />
           <div>
             <span className="text-xs text-gray-400 block">Humedad</span>
-            <span className="font-semibold font-mono">{loading ? '--' : `${weather?.humidity}%`}</span>
+            <span className="font-semibold font-mono">{loading || !weather ? '--' : `${weather.humidity}%`}</span>
           </div>
         </div>
 

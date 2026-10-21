@@ -44,4 +44,6 @@ export interface WeatherData {
   icon: string;
   humidity: number;
   windSpeed: number;
+  /** Hora del dato que devolvió el servicio ("10:15"), para no hacerlo pasar por "ahora". */
+  observedAt?: string;
 }
