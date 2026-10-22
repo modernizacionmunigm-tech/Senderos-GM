@@ -12,13 +12,14 @@ import {
   CloudSun, 
   MessageSquare, 
   User, 
-  Compass, 
-  Lock,
-  ArrowRight,
-  ShieldCheck
+  Compass,
+  Mail
 } from 'lucide-react';
-import { TRAILS, CATEGORIES, GOOGLE_FORM_CONFIG } from '../data';
-import { buildComments, formatSeconds, minutosValue, segundosValue, tienePreguntaDeSegundos, getRunnerName, getRunnerCategory, saveRunnerName, saveRunnerCategory } from '../corredor';
+import { TRAILS, CATEGORIES } from '../data';
+import { formatSeconds, getRunnerName, getRunnerCategory, saveRunnerName, saveRunnerCategory, submitMark } from '../corredor';
+import { isApiConfigured, type CaptchaAnswer } from '../api';
+import Captcha from './Captcha';
+import PrivacyNotice from './PrivacyNotice';
 
 interface TimeFormProps {
   onTimeAdded: () => void;
@@ -36,10 +37,13 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
   const totalSegundos = tiempoMinutos * 60 + tiempoSegundos;
   const [clima, setClima] = useState('Soleado');
   const [comentarios, setComentarios] = useState('');
-  const [terminosAceptados, setTerminosAceptados] = useState(true);
+  const [email, setEmail] = useState('');
+  const [terminosAceptados, setTerminosAceptados] = useState(false);
+  const [captcha, setCaptcha] = useState<CaptchaAnswer | null>(null);
+  const [queued, setQueued] = useState(false);
+  const [startedAt] = useState(() => Date.now());
   
-  // Categoría deportiva: se usa para la tabla y viaja anotada en los
-  // comentarios (la planilla no tiene una columna propia para esto).
+  // Categoría deportiva: se usa para la tabla y se guarda en su columna.
   const [categoria, setCategoria] = useState(() => getRunnerCategory() || CATEGORIES[1]);
 
   // Date and hour starts state
@@ -76,10 +80,6 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
     }
   };
 
-  // Compute breakdown of date and start hour
-  const [fechaYear, fechaMonth, fechaDay] = fecha ? fecha.split('-') : ['', '', ''];
-  const [horaHour, horaMinute] = horaInicio ? horaInicio.split(':') : ['', ''];
-
   // Convertir el tiempo a HH:MM:SS para la tabla
   const getFormattedTimeForLocalList = (): string => formatSeconds(totalSegundos);
 
@@ -92,74 +92,60 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
     return dateStr;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
     if (!terminosAceptados) {
-      e.preventDefault();
-      alert('Debes aceptar los términos para aparecer en la clasificación pública.');
+      alert('Necesitamos tu consentimiento para publicar la marca.');
       return;
     }
     if (totalSegundos <= 0) {
-      e.preventDefault();
       alert('Poné cuánto tardaste: los minutos y los segundos.');
       return;
     }
+    if (!isApiConfigured) {
+      alert('El ranking todavía no está configurado. Avisá al Área de Modernización.');
+      return;
+    }
+    if (!captcha) {
+      alert('Resolvé la verificación anti-bots para continuar.');
+      return;
+    }
+
     triggerVibrate(60);
     setSubmitting(true);
-    // Let browser native submit mechanism continue into target="google_form_target_iframe"
-  };
+    setQueued(false);
 
-  // Triggered when search loaded content
-  const handleIframeLoad = () => {
-    if (submitting) {
-      setSubmitting(false);
-      setSuccess(true);
-      triggerVibrate(150);
+    const result = await submitMark({
+      name: nombre.trim(),
+      trailName: sendero,
+      seconds: totalSegundos,
+      dateISO: fecha,
+      startTime: horaInicio,
+      weather: clima,
+      category: categoria,
+      comments: comentarios,
+      email: email.trim(),
+      captcha,
+      elapsedMs: Date.now() - startedAt,
+    });
 
-      // 1. Instantly register in our localStorage database for immediate local display
-      const cleanTime = getFormattedTimeForLocalList();
-      const cleanDate = getFormattedDateToDisplay(fecha);
+    saveRunnerName(nombre.trim());
+    saveRunnerCategory(categoria);
+    setSubmitting(false);
+    setQueued(result === 'en_cola');
+    setSuccess(true);
+    triggerVibrate(150);
+    onTimeAdded();
 
-      // Lo que cargó queda guardado para el próximo recorrido.
-      saveRunnerName(nombre.trim());
-      saveRunnerCategory(categoria);
-
-      const localUserRuns = JSON.parse(localStorage.getItem('saved_user_ranks') || '[]');
-      const newRun = {
-        id: 'local_' + Date.now(),
-        name: nombre.trim(),
-        category: categoria,
-        time: cleanTime,
-        trailName: sendero,
-        date: cleanDate,
-        isLocal: true,
-      };
-
-      localStorage.setItem('saved_user_ranks', JSON.stringify([newRun, ...localUserRuns]));
-
-      // 2. Trigger parent callbacks
-      onTimeAdded();
-      
-      // Auto close after 3 seconds if inside modal
-      if (onClose) {
-        setTimeout(() => {
-          onClose();
-        }, 3500);
-      }
+    if (onClose) {
+      setTimeout(onClose, 3500);
     }
   };
 
   return (
     <div id="times-form-container" className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 md:p-8 space-y-6">
       
-      {/* Hidden iframe that handles direct Google Forms submission without page redraw */}
-      <iframe
-        name="google_form_target_iframe"
-        id="google_form_target_iframe"
-        style={{ display: 'none' }}
-        onLoad={handleIframeLoad}
-        title="Google Form Response Transmitter"
-      />
-
       {success ? (
         <div className="py-12 flex flex-col items-center justify-center text-center space-y-5 animate-in zoom-in-95 duration-300">
           <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl shadow-xs border border-emerald-200">
@@ -168,7 +154,9 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
           <div className="space-y-1.5">
             <h3 className="text-xl font-bold text-gray-900 font-display">¡Tiempo Registrado con Éxito!</h3>
             <p className="text-xs text-gray-400 font-medium max-w-sm">
-              Tu marca se guardó de forma segura localmente y se transmitió de extremo a extremo al Formulario Oficial de Guardia Mitre.
+              {queued
+                ? 'Tu marca quedó guardada en este teléfono y se enviará sola cuando vuelva la señal.'
+                : 'Tu marca se envió al ranking oficial de Monte Mitre.'}
             </p>
           </div>
           
@@ -188,10 +176,13 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
               onClick={() => {
                 triggerVibrate();
                 setSuccess(false);
+                setQueued(false);
+                setCaptcha(null);
                 setNombre('');
                 setTiempoMinutos(30);
                 setTiempoSegundos(0);
                 setComentarios('');
+                setEmail('');
               }}
               className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold rounded-xl transition-all active:scale-95 cursor-pointer"
             >
@@ -218,7 +209,7 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 <h3 className="text-xl font-bold text-gray-900 font-display">Registrar Mi Marca de Tiempo</h3>
               </div>
               <p className="text-xs text-gray-500 max-w-xl">
-                Completa tus datos reales de recorrido. Al presionar registrar se guardarán en la planilla y aparecerás en nuestro ranking.
+                Completa tus datos reales de recorrido. Al registrar, tu marca se envía al ranking oficial; si no hay señal, queda en tu teléfono y se sube después.
               </p>
             </div>
             
@@ -233,51 +224,27 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
             )}
           </div>
 
-          <form
-            action={`https://docs.google.com/forms/d/e/${GOOGLE_FORM_CONFIG.formId}/formResponse`}
-            method="POST"
-            target="google_form_target_iframe"
-            onSubmit={handleSubmit}
-            className="space-y-5"
-          >
-            {/* Real Form hidden fields mapping back to google forms exact structured keys */}
-            <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.fechaYear} value={fechaYear} />
-            <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.fechaMonth} value={fechaMonth} />
-            <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.fechaDay} value={fechaDay} />
-            <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.horaHour} value={horaHour} />
-            <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.horaMinute} value={horaMinute} />
-            {/* La planilla no tiene columna de categoría: va anotada en los
-                comentarios, igual que cuando la carga el cronómetro del mapa. */}
-            <input
-              type="hidden"
-              name={GOOGLE_FORM_CONFIG.entries.comentarios}
-              value={buildComments({ category: categoria, userComment: comentarios })}
-            />
-            {GOOGLE_FORM_CONFIG.entries.categoria && (
-              <input type="hidden" name={GOOGLE_FORM_CONFIG.entries.categoria} value={categoria} />
-            )}
-
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
-              {/* Runner Name (entry.969350065) */}
+              {/* Nombre o apodo */}
               <div className="space-y-1.5 md:col-span-2">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                   <User className="w-3.5 h-3.5 text-blue-600" />
-                  Tu nombre o apodo para el ranking público
+                  Tu nombre y apellido (se publica el primer nombre y las iniciales)
                 </label>
                 <input
                   type="text"
                   id="nombre"
-                  name={GOOGLE_FORM_CONFIG.entries.nombre}
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej: Juan Pérez o Senderista2024"
+                  placeholder="Ej: Daniela Pérez"
                   required
                   className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-gray-800"
                 />
               </div>
 
-              {/* Sendero Realizado (entry.49559792) */}
+              {/* Sendero */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                   <Compass className="w-3.5 h-3.5 text-blue-600" />
@@ -285,7 +252,6 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 </label>
                 <select
                   id="sendero"
-                  name={GOOGLE_FORM_CONFIG.entries.sendero}
                   value={sendero}
                   onChange={(e) => { triggerVibrate(); setSendero(e.target.value); }}
                   required
@@ -337,20 +303,6 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 </div>
               </div>
 
-              {/* Lo que se manda al Formulario */}
-              <input
-                type="hidden"
-                name={GOOGLE_FORM_CONFIG.entries.tiempo}
-                value={minutosValue(totalSegundos)}
-              />
-              {tienePreguntaDeSegundos() && (
-                <input
-                  type="hidden"
-                  name={GOOGLE_FORM_CONFIG.entries.tiempoSegundos}
-                  value={segundosValue(totalSegundos)}
-                />
-              )}
-
               {/* Fecha del recorrido */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
@@ -383,7 +335,7 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 />
               </div>
 
-              {/* Condicion del clima (entry.1090869712) */}
+              {/* Condición del clima */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                   <CloudSun className="w-3.5 h-3.5 text-blue-600" />
@@ -391,7 +343,6 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 </label>
                 <select
                   id="clima"
-                  name={GOOGLE_FORM_CONFIG.entries.clima}
                   value={clima}
                   onChange={(e) => { triggerVibrate(); setClima(e.target.value); }}
                   required
@@ -404,7 +355,7 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 </select>
               </div>
 
-              {/* Deporte Categoria dropdown (se manda anotada en los comentarios) */}
+              {/* Categoría deportiva: viaja como campo propio a Apps Script. */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                   <Trophy className="w-3.5 h-3.5 text-blue-600" />
@@ -424,11 +375,11 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 </select>
               </div>
 
-              {/* Comentarios (entry.1586715887) */}
+              {/* Comentario: se guarda y se publica sólo si lo aprueban. */}
               <div className="space-y-1.5 md:col-span-2">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                   <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
-                  Comentarios (opcional)
+                  Comentario (opcional, se publica si lo aprueban)
                 </label>
                 <textarea
                   id="comentarios"
@@ -440,21 +391,49 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
                 />
               </div>
 
-              {/* Terminos y condiciones (entry.871715811) */}
+              {/* Email opcional: sólo interno, para verificar una baja. */}
+              <div className="space-y-1.5 md:col-span-2">
+                <label
+                  htmlFor="email"
+                  className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1"
+                >
+                  <Mail className="w-3.5 h-3.5 text-blue-600" />
+                  Email (opcional, no se publica)
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  autoComplete="email"
+                  maxLength={120}
+                  className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-gray-800"
+                />
+              </div>
+
+              <div className="md:col-span-2 space-y-2">
+                <Captcha onChange={setCaptcha} idPrefix="time-form" />
+                <PrivacyNotice />
+              </div>
+
+              {/* Consentimiento */}
               <div className="md:col-span-2 py-1">
                 <label className="flex items-start gap-2.5 cursor-pointer selection:bg-transparent">
                   <input
                     type="checkbox"
                     id="terminos"
-                    name={GOOGLE_FORM_CONFIG.entries.terminos}
-                    value="Acepto"
                     checked={terminosAceptados}
                     onChange={(e) => setTerminosAceptados(e.target.checked)}
                     required
                     className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-xs text-gray-500 select-none">
-                    Acepto que mi nombre y tiempo aparezcan públicamente en el ranking oficial de Monte Mitre.
+                    Acepto que mi primer nombre y las iniciales de las demás palabras (por ejemplo,
+                    “Daniela P.” o “Daniela P. G.”), sendero, tiempo, categoría y fecha aparezcan en
+                    el ranking público. Si soy menor, lo hago con autorización de un
+                    adulto responsable. Los comentarios se publican sólo si
+                    Modernización los aprueba. El email es opcional y no se publica.
                   </span>
                 </label>
               </div>
@@ -466,7 +445,7 @@ export default function TimeForm({ onTimeAdded, preselectedTrailId, onClose }: T
             <button
               type="submit"
               id="submit-form-time"
-              disabled={submitting || !nombre.trim() || !terminosAceptados}
+              disabled={submitting || !nombre.trim() || !terminosAceptados || !captcha}
               className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-[0.98] select-none cursor-pointer flex items-center justify-center gap-2"
             >
               <CheckCircle className="w-4 h-4 fill-current text-white/90" />

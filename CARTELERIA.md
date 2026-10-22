@@ -175,20 +175,29 @@ tiene sentido poner el QR en los puntos (el pedido de `?poi=` ya está listo en
 ### 3.5 El sistema visual: color, tipografía y bandas
 
 Los mockups están en **`carteleria/mockups.html`** (abrir en el navegador): ahí
-están las cinco piezas dibujadas a escala, con el **trazado real** de los tres
-senderos tomado de las mismas coordenadas que usa la app. Los archivos están
+están las cinco piezas dibujadas a escala —el cartel de la puerta en sus **dos
+versiones**, la voz de la app y la voz municipal—, con el **trazado real** de los
+tres senderos tomado de las mismas coordenadas que usa la app. Los archivos están
 construidos a **1 unidad = 1 mm**, así que sirven de base para los archivos de
 imprenta.
 
 **Una sola idea:** cada sendero es **su color y su banda**. Eso aparece igual en
 el mapa, en el cartel, en la placa y en la app. Todo lo demás —texto, números,
-logos— va en **negro sobre blanco**.
+logos— va en **azul profundo sobre blanco**, la tinta de la Municipalidad.
+
+**La paleta es la del Municipio** (leída del material de identidad, ver
+`carteleria/IDENTIDAD.md`): no se inventó nada. Lo único negro es **adentro de
+los campos de color del sendero**, porque el azul sobre el rojo de la Alta no
+llega al contraste mínimo (3,3 : 1).
 
 | Uso | Color | Hex |
 |---|---|---|
-| Tinta: todo el texto y los números | Negro | `#111111` |
+| Tinta: todo el texto y los números | Azul profundo 282 C | `#003366` |
 | Fondo de todas las placas | Blanco | `#FFFFFF` |
-| Datos secundarios y pies | Gris | `#6B7280` |
+| Datos secundarios y pies (sólo sobre blanco) | Gris | `#6B7280` |
+| Acento institucional, reglas y bandas | Celeste 291 C | `#9BCBEB` |
+| Banda de las piezas turísticas | Tierra pampeana 7510 C | `#A67C52` |
+| Adentro de los campos de color del sendero | Negro | `#111111` |
 | Sendero Baja | Verde | `#10B981` |
 | Sendero Media | Ámbar | `#F59E0B` |
 | Sendero Alta | Rojo | `#EF4444` |
@@ -202,10 +211,18 @@ texto: se usa para campos de color y adentro va **texto negro**. La razón:
 
 | Combinación | Contraste | ¿Se usa? |
 |---|---|---|
-| Negro sobre blanco | 19,3 : 1 | Sí — todo el texto |
+| Azul profundo sobre blanco | 12,3 : 1 | Sí — todo el texto |
+| Negro sobre blanco | 19,3 : 1 | Sólo si algo queda fuera de registro |
+| Azul profundo sobre celeste | 7,3 : 1 | Sí — sobre los fondos celestes |
+| Negro sobre tierra pampeana | 5,6 : 1 | Sí — texto de la banda turística |
+| Gris sobre blanco | 4,8 : 1 | Sí — datos secundarios |
 | Negro sobre verde (Baja) | 8,2 : 1 | Sí — el número de punto |
 | Negro sobre ámbar (Media) | 9,8 : 1 | Sí — el número de punto |
 | Negro sobre rojo (Alta) | 5,6 : 1 | Sí — el número de punto |
+| Azul sobre rojo (Alta) | 3,3 : 1 | **No** — por eso adentro va negro |
+| Blanco sobre tierra pampeana | 3,7 : 1 | **No** |
+| Gris sobre celeste | 2,8 : 1 | **No** — sobre celeste, sólo azul |
+| Blanco sobre celeste | 1,7 : 1 | **No** |
 | Blanco sobre verde | 2,6 : 1 | **No** |
 | Blanco sobre ámbar | 2,2 : 1 | **No** |
 | Ámbar sobre blanco (texto) | 2,2 : 1 | **No** |
@@ -227,27 +244,38 @@ además del color, **una cantidad de franjas distinta**:
 Las franjas van separadas por huecos blancos del mismo grosor que la franja. Se
 imprime igual de fácil que un color plano y no depende del color para funcionar.
 
-**Tipografía.** Las mismas dos de la app, para que el cartel y la pantalla se
-parezcan:
+**Tipografía.** Una sola voz para todo el sistema: **Space Grotesk** (títulos,
+nombres y números) + **Inter** (texto, datos y pies), las dos de la app.
+**Decidido el 19/10/2026** (§11, puntos 17 y 19): el cartel de la puerta toma del
+Municipio la **estructura y los colores** (azul profundo → marco blanco → campo
+celeste → banda tierra pampeana), **no la letra**. Así las 35 piezas comparten
+tipografía y la puerta se distingue por la composición y el color. Quedan
+descartadas Playfair Display, Cinzel, Archivo Black y Minion. Las dos versiones
+siguen dibujadas en `mockups.html` (§2 la blanca, §2.b la municipal) para
+comparar.
 
 | Uso | Tipografía | Alto de letra | Se lee a |
 |---|---|---|---|
-| Título del cartel | Space Grotesk 700 | 76 mm | 25 m |
+| Título del cartel de la puerta | Space Grotesk 700 | 78 mm | 25 m |
 | Nombre del sendero (placa) | Space Grotesk 700 | 52 mm | 12 m |
 | Número de punto | Space Grotesk 700 | 58 mm | 15 m |
+| Lockup de la banda ("MUNICIPALIDAD / GUARDIA MITRE") | Space Grotesk 700 | 26 mm | 4 m |
+| Etiquetas y bajadas ("ELEGÍ TU SENDERO", "ESCANEÁ LA APP") | Space Grotesk 600 | 18 a 24 mm | 6 a 8 m |
 | Títulos chicos | Space Grotesk 600 | 15 a 30 mm | 4 a 8 m |
-| Datos (km, desnivel) | Inter 500 | 12 a 13 mm | 3 m |
-| Pies y créditos | Inter 400 | 8 a 10 mm | 1 m |
+| Recomendaciones de la banda | Inter 600 | 16 mm | 3 m |
+| Datos (km, desnivel) | Inter 500 y 600 | 12 a 19 mm | 3 m |
+| Pies y créditos | Inter 400 | 8 a 15 mm | 1 m |
 
 Regla práctica usada para calcular: **25 mm de alto de letra por cada 10 m de
-distancia**. Las dos tipografías son libres (Google Fonts): no hay que comprar
-licencias.
+distancia**. Son las dos libres (Google Fonts): no hay que comprar licencias. Los
+TTF están en `carteleria/fuentes/` y en los archivos de imprenta el texto ya va
+**convertido a curvas**.
 
 **Qué lleva cada pieza, y qué no:**
 
-- La **banda** de las placas chicas lleva, en negro, la línea institucional
-  ("MUNICIPALIDAD DE GUARDIA MITRE") alineada a la derecha. Es espacio que ya
-  estaba muerto y evita sumar un renglón.
+- La **banda** de las placas chicas lleva el **bloque institucional**: "MUNICIPALIDAD
+  / GUARDIA MITRE" en blanco sobre azul profundo, alineado a la derecha. Es espacio
+  que ya estaba muerto y evita sumar un renglón.
 - Las **placas chicas no llevan logos**: los cuatro logos institucionales van en
   el cartel de la puerta y en el de reglamento. Repetirlos en 25 placas no suma y
   encarece la impresión.
@@ -349,7 +377,7 @@ Media → 2,64 km · desnivel 36 m. Alta → 2,68 km · desnivel 39 m.
    └───────┘      sendero (ver 3.5: en color no se lee)
 
    EL CAÑÓN DE LA TORTURA
-   Paso estrecho esculpido por las lluvias entre dunas arenosas.
+   Paso estrecho esculpido por las lluvias entre lomas arenosas.
    A 1,07 km del inicio
 
    Punto 3 de 7 · Sendero ALTA
@@ -556,11 +584,18 @@ Fonts), así que no hay licencias que comprar.
 
 Para el imprentero:
 
-- Archivos **SVG a tamaño real en milímetros** (los mockups ya están construidos
-  así: 1 unidad = 1 mm).
-- O se le pasan las fuentes, o se **convierten las letras a curvas** antes de
-  mandar. Las dos opciones son válidas; conviene preguntarle al taller.
-- **Sangrado 5 mm** y las franjas de color a sangre.
+- **Ya está generado**: `carteleria/imprenta/` tiene **33 SVG a tamaño real en
+  milímetros** (1 unidad = 1 mm), con **5 mm de sangrado** y **todo el texto
+  convertido a curvas**. No dependen de ninguna tipografía instalada: se abren
+  igual en Illustrator, Inkscape o el navegador.
+- Los originales editables son `carteleria/mockups.html` (el diseño) y
+  `carteleria/herramientas/generar-imprenta.js` (el script que arma los SVG a
+  partir del mockup y de `app/src/data.ts`). **Los archivos de `imprenta/` no se
+  editan a mano**: se toca el mockup y se vuelven a generar.
+- Las tipografías del sistema están en `carteleria/fuentes/` (TTF libres) por si
+  el taller necesita rehacer algún texto.
+- El detalle archivo por archivo, lo que falta completar (los ▢) y los avisos de
+  armado están en **`carteleria/imprenta/LEEME.md`**.
 
 ### Bajo impacto
 
@@ -598,15 +633,15 @@ el esquema simplificado (3.1):
 
 | Pieza | Medida | m² | Cantidad | m² totales |
 |---|---|---|---|---|
-| Cartel de Senderos (la puerta) | 120 × 80 cm | 0,96 | 1 | 0,96 |
+| Cartel de Senderos (la puerta) | 140 × 100 cm | 1,40 | 1 | 1,40 |
 | Reglamento / aviso | 60 × 45 cm | 0,27 | 1 | 0,27 |
 | Placa de inicio/meta (doble cara) | 25 × 20 cm | 0,05 | 3 | 0,15 |
 | Punto numerado | 25 × 20 cm | 0,05 | 22 | 1,10 |
 | Flecha | 30 × 10 cm | 0,03 | 8 | 0,24 |
-| | | | **35 piezas** | **~2,7 m² de placa** |
+| | | | **35 piezas** | **~3,2 m² de placa** |
 
 La diferencia con el esquema completo es grande: se pasa de ~5,1 m² y tres
-piezas grandes a **~2,7 m² y una sola pieza grande**. Ojo con el doble cara: cotizar
+piezas grandes a **~3,2 m² y una sola pieza grande**. Ojo con el doble cara: cotizar
 la impresión de las dos caras en esas 3 placas.
 
 A eso sumar: postes, tornillería antivandálica, hincado/mano de obra, y el
@@ -657,11 +692,44 @@ A eso sumar: postes, tornillería antivandálica, hincado/mano de obra, y el
     QR en las placas y la dirección escrita únicamente en el cartel de la puerta,
     (b) registrar una **URL corta municipal** que entre en las dos. Recomendado:
     (b), y mientras tanto (a).
-15. **¿Se aprueba el paso a 140 × 100 cm** del cartel de la puerta (ver 3.5)?
-    Es la única pieza grande del sistema.
+15. **RESUELTO (19/10/2026) — el cartel de la puerta va a 140 × 100 cm.** Medida
+    confirmada; es la única pieza grande del sistema. La cotización va a esa
+    medida (1,40 m²).
 16. **Los QR definitivos** se generan recién cuando estén las URLs cerradas, y se
     prueban **impresos y al sol** con un celular viejo antes de mandar las 35
     piezas. Las URLs, una vez impresas, no se cambian.
+17. **RESUELTO (19/10/2026) — la voz del cartel de la puerta: la receta municipal
+    con la tipografía de la app.** Estructura del Municipio (azul profundo → marco
+    blanco → campo celeste → banda al pie en tierra pampeana) pero con **Space
+    Grotesk + Inter**, las tipografías de la app, en toda la pieza. Las placas, los
+    puntos y las flechas ya estaban en la voz de la app (blanco, azul profundo,
+    color del sendero): así el sistema entero comparte la misma letra. Las dos
+    versiones quedan dibujadas en `carteleria/mockups.html` (§2 y §2.b) para poder
+    compararlas; la blanca quedó como referencia. Ver `carteleria/IDENTIDAD.md`.
+18. **RESUELTO (19/10/2026) — el cartel se declara turístico: sí.** La banda al pie
+    va en **tierra pampeana con el texto en negro** (5,6 : 1), como Casa de la
+    Cultura y Mirador Ceferino. Si más adelante se prefiere la versión
+    institucional, la banda pasa a azul profundo con texto blanco (12,3 : 1).
+19. **RESUELTO (19/10/2026) — Minion no entra en los Senderos.** El documento de
+    diseño pide Minion (Adobe, con licencia) para el acceso y el vial, pero no está
+    en el kit libre 2026. Como todo el sistema de los Senderos va con **Space
+    Grotesk + Inter**, el tema queda saldado acá. Sigue abierto para el resto de la
+    cartelería municipal (ahí sí habría que decidir si Minion se reemplaza por
+    Playfair Display).
+20. **RESUELTO (19/10/2026) — los nombres largos se acortaron en la app.** Los 8
+    puntos de Baja se renombraron ("La puerta del monte", "El primer cañadón",
+    "El cañadón largo", "La salida a la calle", "La vuelta del monte", "La bajada
+    al cementerio", "El cementerio viejo", "La última curva"), así que **los 22
+    nombres entran en uno o dos renglones a 15 mm** y ninguna placa queda distinta
+    de las otras. Como los nombres salen de `app/src/data.ts`, la app y la
+    cartelería dicen lo mismo; si un punto se renombra, se vuelve a generar. Lo
+    único que hubo que ajustar: cuatro descripciones bajaron de 10,5 a 10 mm (media
+    2) o 9,5 mm (media 3, alta 1 y alta 6) para entrar en tres renglones. Está todo
+    listado en `carteleria/imprenta/LEEME.md`.
+21. **Las flechas generadas apuntan a la derecha.** Se hizo una por sendero como
+    modelo. La cantidad y los lugares salen del relevamiento en el terreno
+    (fase 3): si hace falta alguna que apunte a la izquierda, se agrega en el
+    mockup y se vuelve a generar.
 
 ---
 

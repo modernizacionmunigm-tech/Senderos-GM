@@ -35,6 +35,8 @@ export interface TimeRecord {
   time: string; // "HH:MM:SS" or "MM:SS"
   trailName: string;
   date: string; // "DD/MM/YYYY"
+  /** Sólo viene si Modernización aprobó el comentario. */
+  comment?: string;
   isLocal?: boolean; // To distinguish user-added from hardcoded ones
 }
 

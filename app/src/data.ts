@@ -3,7 +3,7 @@
 SPDX-License-Identifier: Apache-2.0
 */
 
-import { Trail, TimeRecord } from './types';
+import { Trail } from './types';
 
 /// Near Guardia Mitre town center coordinates, Río Negro, Argentina
 export const GUARDIA_MITRE_CENTER: [number, number] = [-40.4220, -63.6680];
@@ -296,52 +296,4 @@ export const TRAILS: Trail[] = [
   },
 ];
 
-export const INITIAL_RANKINGS: TimeRecord[] = [
-  { id: 'r1', name: 'Martín Altieri', category: 'Adulto', time: '00:11:42', trailName: 'Monte Mitre - Dificultad Baja', date: '22/05/2026' },
-  { id: 'r2', name: 'Florencia Benítez', category: 'Adulto', time: '00:13:15', trailName: 'Monte Mitre - Dificultad Baja', date: '18/05/2026' },
-  { id: 'r3', name: 'Carlos Larrañaga', category: 'Master A', time: '00:12:58', trailName: 'Monte Mitre - Dificultad Baja', date: '21/05/2026' },
-  { id: 'r4', name: 'María Luz Otero', category: 'Junior', time: '00:14:30', trailName: 'Monte Mitre - Dificultad Baja', date: '25/05/2026' },
-  
-  { id: 'r5', name: 'Sebastián Corradi', category: 'Master A', time: '00:18:10', trailName: 'Monte Mitre - Dificultad Alta', date: '24/05/2026' },
-  { id: 'r6', name: 'Lorena Agrelo', category: 'Adulto', time: '00:19:45', trailName: 'Monte Mitre - Dificultad Alta', date: '26/05/2026' },
-  { id: 'r7', name: 'Hernán De Rosa', category: 'Master B', time: '00:21:12', trailName: 'Monte Mitre - Dificultad Alta', date: '19/05/2026' },
-  
-  { id: 'r8', name: 'Julieta Giménez', category: 'Adulto', time: '00:15:18', trailName: 'Monte Mitre - Dificultad Baja', date: '27/05/2026' },
-  { id: 'r9', name: 'Gastón Pozzo', category: 'Master A', time: '00:20:44', trailName: 'Monte Mitre - Dificultad Alta', date: '23/05/2026' },
-  { id: 'r10', name: 'Tomas Belleti', category: 'Junior', time: '00:16:05', trailName: 'Monte Mitre - Dificultad Baja', date: '20/05/2026' },
-];
-
 export const CATEGORIES = ['Junior (Menores de 18)', 'Adulto (18 - 39)', 'Master A (40 - 52)', 'Master B (53+)'];
-
-/**
- * Google Form integration details for real POST submit.
- */
-export const GOOGLE_FORM_CONFIG = {
-  formId: '1FAIpQLSfzRfc2f-i8xmBMGfVbhDz4Nnxlt5hOfpK3Y4p3AE8D_iw0Pw',
-  entries: {
-    nombre: 'entry.969350065',
-    sendero: 'entry.49559792',
-    tiempo: 'entry.236869142',
-    fechaYear: 'entry.341045598_year',
-    fechaMonth: 'entry.341045598_month',
-    fechaDay: 'entry.341045598_day',
-    horaHour: 'entry.1889950637_hour',
-    horaMinute: 'entry.1889950637_minute',
-    clima: 'entry.1090869712',
-    comentarios: 'entry.1586715887',
-    terminos: 'entry.871715811',
-    // El formulario todavía no pregunta la categoría deportiva. Mientras esté
-    // vacío, la categoría viaja dentro de "Comentarios" (así no se pierde) y
-    // la tabla la lee de ahí. Si algún día se agrega la pregunta al
-    // formulario, alcanza con pegar acá su "entry.XXXXXXXX".
-    categoria: '',
-    // El tiempo va en dos columnas de la planilla: "Tiempo (minutos)" y
-    // "Tiempo (segundos)" (12 y 31). Si esta quedara vacía, la app vuelve sola
-    // a mandar los minutos con decimales (12.517 = 12 min 31 s), que la tabla
-    // también entiende.
-    tiempoSegundos: 'entry.1708924668',
-  }
-};
-
-// Default Google Sheets published CSV URL if any
-export const DEFAULT_GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwrJ2oWFuHV3HvqmX304q75q_T_7babaMlA6Crgfazai0awP9tP1WDUj9DAT0ukOq1U6bzxwAN6qXA/pub?output=csv';

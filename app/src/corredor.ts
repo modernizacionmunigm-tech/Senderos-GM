@@ -6,15 +6,11 @@
 /**
  * Corredor: nombre guardado en el teléfono y carga de marcas al ranking.
  *
- * La página no tiene servidor propio: las marcas se mandan al mismo
- * Formulario de Google que alimenta la planilla del ranking (el que usa el
- * formulario manual de "Registrar Tiempo"). La diferencia es que acá se manda
- * por atrás, sin que la persona complete nada.
- *
- * Si en el momento de terminar no hay señal, la marca queda guardada en el
- * teléfono y se sube sola cuando vuelve la conexión.
+ * La app no habla con la planilla ni con el formulario: manda la marca al
+ * Web App de Apps Script (ver `api.ts`), que valida y escribe en la hoja
+ * privada. Si no hay señal, la marca queda en cola y se sube sola.
  */
-import { GOOGLE_FORM_CONFIG } from './data';
+import { postMark, type CaptchaAnswer } from './api';
 
 /** Nombre del corredor, para no pedirlo en cada recorrido. */
 export const RUNNER_NAME_KEY = 'senderos_runner_name';
@@ -66,36 +62,6 @@ export function formatSeconds(secs: number): string {
   return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
-/**
- * Segundos -> minutos con tres decimales. La planilla tiene una columna
- * "Tiempo Total (minutos)", así que el cronómetro se manda en minutos: a la
- * tabla le alcanza con tres decimales para no perder ni un segundo.
- */
-export function secondsToMinutesValue(secs: number): string {
-  return (Math.round((secs / 60) * 1000) / 1000).toFixed(3);
-}
-
-/**
- * ¿El Formulario ya tiene la pregunta "Tiempo (segundos)"? Si está, el tiempo
- * va en dos columnas limpias (12 y 31). Si no, va en una sola con minutos y
- * decimales, para no perder los segundos.
- */
-export function tienePreguntaDeSegundos(): boolean {
-  return Boolean(GOOGLE_FORM_CONFIG.entries.tiempoSegundos);
-}
-
-/** Lo que va en la columna "Tiempo (minutos)". */
-export function minutosValue(secs: number): string {
-  const total = Math.max(0, Math.round(secs));
-  if (tienePreguntaDeSegundos()) return String(Math.floor(total / 60));
-  return secondsToMinutesValue(total);
-}
-
-/** Lo que va en la columna "Tiempo (segundos)" (0 a 59). */
-export function segundosValue(secs: number): string {
-  return String(Math.max(0, Math.round(secs)) % 60);
-}
-
 export interface MarkPayload {
   name: string;
   trailName: string;
@@ -108,23 +74,19 @@ export interface MarkPayload {
   /** Categoría deportiva (Junior, Adulto, Master A, Master B). */
   category?: string;
   comments?: string;
+  /** Email opcional, para verificar identidad si se pide una baja. */
+  email?: string;
+  /** Desafío anti-bot resuelto por la persona. */
+  captcha?: CaptchaAnswer;
+  /** Campo trampa: tiene que ir vacío. */
+  honeypot?: string;
+  /** Milisegundos que tardó en completar el formulario. */
+  elapsedMs?: number;
 }
 
 interface QueuedMark extends MarkPayload {
   id: string;
   createdAt: number;
-}
-
-/**
- * Los comentarios que van a la planilla: la categoría (la planilla no tiene
- * columna propia para eso) y lo que escribió la persona. El tiempo ya va
- * exacto en sus dos columnas, así que no hace falta anotarlo acá.
- */
-export function buildComments(opts: { category?: string; userComment?: string }): string {
-  const parts: string[] = [];
-  if (opts.category) parts.push(`Categoría: ${opts.category}.`);
-  if (opts.userComment && opts.userComment.trim()) parts.push(opts.userComment.trim());
-  return parts.join(' ');
 }
 
 /** La categoría no la pregunta el formulario: se deduce del sendero. */
@@ -133,54 +95,10 @@ function categoryForTrail(trailName: string): string {
   if (lower.includes('alta')) return 'MONTE';
   return 'GENERAL';
 }
+
 function dateForTable(dateISO: string): string {
   const [y, m, d] = (dateISO || '').split('-');
   return y && m && d ? `${d}/${m}/${y}` : new Date().toLocaleDateString('es-AR');
-}
-
-/** Arma el cuerpo tal cual lo manda el formulario de Google. */
-function buildBody(payload: MarkPayload): URLSearchParams {
-  const entries = GOOGLE_FORM_CONFIG.entries;
-  const [year, month, day] = payload.dateISO.split('-');
-  const [hour, minute] = payload.startTime.split(':');
-
-  const body = new URLSearchParams();
-  body.set(entries.nombre, payload.name);
-  body.set(entries.sendero, payload.trailName);
-  body.set(entries.tiempo, minutosValue(payload.seconds));
-  if (entries.tiempoSegundos) {
-    body.set(entries.tiempoSegundos, segundosValue(payload.seconds));
-  }
-  body.set(entries.fechaYear, year || '');
-  body.set(entries.fechaMonth, month || '');
-  body.set(entries.fechaDay, day || '');
-  body.set(entries.horaHour, hour || '');
-  body.set(entries.horaMinute, minute || '');
-  body.set(entries.clima, payload.weather);
-  body.set(
-    entries.comentarios,
-    buildComments({
-      category: payload.category,
-      userComment: payload.comments,
-    })
-  );
-  // Si el formulario ya tiene la pregunta de categoría, va como campo propio;
-  // si no, va dentro de los comentarios (ver buildComments).
-  if (entries.categoria && payload.category) {
-    body.set(entries.categoria, payload.category);
-  }
-  body.set(entries.terminos, 'Acepto');
-  return body;
-}
-
-/** Manda la marca al formulario. Falla sólo si no hay conexión. */
-async function sendMark(payload: MarkPayload): Promise<void> {
-  const url = `https://docs.google.com/forms/d/e/${GOOGLE_FORM_CONFIG.formId}/formResponse`;
-  await fetch(url, {
-    method: 'POST',
-    mode: 'no-cors',
-    body: buildBody(payload),
-  });
 }
 
 function readQueue(): QueuedMark[] {
@@ -232,7 +150,7 @@ export async function flushPendingMarks(): Promise<number> {
   let sent = 0;
   for (const mark of queue) {
     try {
-      await sendMark(mark);
+      await sendMark(mark, true);
       sent += 1;
     } catch {
       left.push(mark);
@@ -244,7 +162,7 @@ export async function flushPendingMarks(): Promise<number> {
 
 /**
  * Guarda la marca en el teléfono para que aparezca al instante en la tabla,
- * sin esperar a que Google la procese.
+ * sin esperar a que el servidor la procese.
  */
 function saveLocalRank(payload: MarkPayload) {
   try {
@@ -277,8 +195,26 @@ function saveLocalRank(payload: MarkPayload) {
   }
 }
 
+async function sendMark(payload: MarkPayload, queued = false): Promise<void> {
+  await postMark({
+    name: payload.name,
+    trailName: payload.trailName,
+    seconds: payload.seconds,
+    dateISO: payload.dateISO,
+    startTime: payload.startTime,
+    weather: payload.weather,
+    category: payload.category || categoryForTrail(payload.trailName),
+    comments: payload.comments,
+    email: payload.email,
+    captcha: payload.captcha,
+    honeypot: payload.honeypot,
+    elapsedMs: payload.elapsedMs,
+    queued,
+  });
+}
+
 /**
- * Carga la marca: aparece al instante en el ranking y se manda al formulario.
+ * Carga la marca: aparece al instante en el ranking y se manda al servidor.
  * Si no hay señal, queda en cola y devuelve "en_cola".
  */
 export async function submitMark(payload: MarkPayload): Promise<'enviado' | 'en_cola'> {

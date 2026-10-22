@@ -114,32 +114,3 @@ export const SPECIES_LIST: Species[] = [
     imageCredit: 'Wikimedia Commons'
   }
 ];
-
-export const CATEGORIES = [
-  'Infantil (hasta 17)',
-  'Adulto (18 - 39)',
-  'Master (40 - 49)',
-  'Senior (50 - 59)',
-  'Veterano (60+)',
-];
-
-export const GOOGLE_FORM_CONFIG = {
-  formId: '1FAIpQLSfzRfc2f-i8xmBMGfVbhDz4Nnxlt5hOfpK3Y4p3AE8D_iw0Pw',
-  entries: {
-    nombre: 'entry.969350065',
-    sendero: 'entry.49559792',
-    tiempo: 'entry.236869142',
-    clima: 'entry.1090869712',
-    comentarios: 'entry.1586715887',
-    terminos: 'entry.871715811',
-    fechaYear: 'entry.year',
-    fechaMonth: 'entry.month',
-    fechaDay: 'entry.day',
-    horaHour: 'entry.hour',
-    horaMinute: 'entry.minute',
-  },
-};
-
-export const DEFAULT_GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1Cnck9_gdvqJ0wVIlJiZqiZj-PM7clQ68iFz35XuqMDk/pub?output=csv';
-
-export const INITIAL_RANKINGS = [];

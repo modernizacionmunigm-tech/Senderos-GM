@@ -23,7 +23,7 @@ completo (código + docs + material). Publicar = compilar y copiar el resultado 
 Desde la carpeta del proyecto (no desde `app\`):
 
 ```powershell
-cd "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Proyecto Senderos Municipalidad"
+cd "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Senderos"
 
 .\publicar.ps1 -Simular     # compila y MUESTRA qué cambiaría. No sube nada.
 .\publicar.ps1              # compila y publica
@@ -60,7 +60,7 @@ Pasos exactos, equivalentes al script. Ojo: el repo es **la carpeta del
 proyecto** (`$s`), no `app\`.
 
 ```powershell
-$s   = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Proyecto Senderos Municipalidad"
+$s   = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Senderos"
 $app = "$s\app"
 $pub = "$s\_publicado"
 
@@ -104,7 +104,7 @@ Si publicaste algo que rompió el sitio, se revierte con un commit al revés
 (nunca borrando historia):
 
 ```powershell
-$s   = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Proyecto Senderos Municipalidad"
+$s   = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Senderos"
 $pub = "$s\_publicado"
 
 git -c core.autocrlf=false -C $s fetch origin

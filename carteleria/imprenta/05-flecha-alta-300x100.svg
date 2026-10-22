@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Senderos del Monte Mitre — flecha de orientación · sendero ALTA -->
+<!-- Tamaño real: 300 × 100 mm · sangrado 5 mm por lado. -->
+<!-- Generado por carteleria/herramientas/generar-imprenta.js — no editar a mano: se pisa. -->
+<!-- El texto va convertido a curvas. El diseño editable está en carteleria/mockups.html -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="310mm" height="110mm" viewBox="-5 -5 310 110" font-family="Inter, sans-serif">
+<rect x="-5" y="-5" width="310" height="110" fill="#ef4444"/>
+    <rect x="0" y="0" width="300" height="100" fill="#ef4444"/>
+    <path d="M20 30 L62 50 L20 70 Z" fill="#111111"/>
+    <rect x="20" y="44" width="42" height="12" fill="#111111"/>
+    <g fill="#111111"><path d="M90.16 66L84.72 66L92.08 38L101.28 38L108.64 66L103.2 66L101.68 59.84L91.68 59.84L90.16 66M96.32 41.32L92.92 54.96L100.44 54.96L97.04 41.32L96.32 41.32"/><path d="M130.08 66L112 66L112 38L117.28 38L117.28 61.2L130.08 61.2L130.08 66"/><path d="M141.6 66L136.32 66L136.32 42.8L128.16 42.8L128.16 38L149.76 38L149.76 42.8L141.6 42.8L141.6 66"/><path d="M154.32 66L148.88 66L156.24 38L165.44 38L172.8 66L167.36 66L165.84 59.84L155.84 59.84L154.32 66M160.48 41.32L157.08 54.96L164.6 54.96L161.2 41.32L160.48 41.32"/></g>
+  
+</svg>

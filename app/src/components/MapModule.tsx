@@ -4,6 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   Play,
   Square,
@@ -23,11 +24,15 @@ import {
   HelpCircle,
   User,
   Flag,
-  Send
+  Send,
+  Mail
 } from 'lucide-react';
 import { Trail, PointOfInterest } from '../types';
 import { TRAILS, CATEGORIES, GUARDIA_MITRE_CENTER } from '../data';
 import { getRunnerName, saveRunnerName, getRunnerCategory, saveRunnerCategory, formatSeconds, submitMark } from '../corredor';
+import { type CaptchaAnswer } from '../api';
+import Captcha from './Captcha';
+import PrivacyNotice from './PrivacyNotice';
 
 // Helper function to calculate distance using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -187,9 +192,12 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const [finishWeather, setFinishWeather] = useState('Soleado');
   const [finishCategory, setFinishCategory] = useState<string>(() => getRunnerCategory());
   const [finishComments, setFinishComments] = useState('');
+  const [finishEmail, setFinishEmail] = useState('');
   const [markStatus, setMarkStatus] = useState<'idle' | 'enviando' | 'enviado' | 'en_cola'>('idle');
   const [markName, setMarkName] = useState<string>(() => getRunnerName());
-  const [markAccepted, setMarkAccepted] = useState(true);
+  const [markAccepted, setMarkAccepted] = useState(false);
+  const [markCaptcha, setMarkCaptcha] = useState<CaptchaAnswer | null>(null);
+  const [markCaptchaKey, setMarkCaptchaKey] = useState(0);
   const [markError, setMarkError] = useState<string | null>(null);
 
   useEffect(() => { elapsedSecondsRef.current = elapsedSeconds; }, [elapsedSeconds]);
@@ -770,6 +778,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     setMarkStatus('idle');
     setMarkError(null);
     setFinishComments('');
+    setFinishEmail('');
     lastCheckpointRef.current = -1;
     setLastCheckpointIndex(-1);
     setCheckpointMessage(null);
@@ -825,6 +834,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
       setMarkError('Elegí tu categoría deportiva para la tabla.');
       return;
     }
+    if (!markCaptcha) {
+      setMarkError('Resolvé la verificación anti-bots para cargar el tiempo.');
+      return;
+    }
 
     setMarkError(null);
     setMarkStatus('enviando');
@@ -848,9 +861,13 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
       weather: finishWeather,
       category: finishCategory,
       comments: finishComments,
+      email: finishEmail.trim(),
+      captcha: markCaptcha,
     });
 
     setMarkStatus(result);
+    setMarkCaptcha(null);
+    setMarkCaptchaKey((key) => key + 1);
     if (result === 'enviado') triggerVibrate(150);
     onMarkSaved?.();
   };
@@ -1317,12 +1334,12 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-200">
-                  Tu nombre para la tabla
+                  Tu nombre y apellido (se publica el primer nombre y las iniciales)
                 </span>
                 <input
                   value={markName}
                   onChange={(e) => setMarkName(e.target.value)}
-                  placeholder="Ej: Juan Pérez"
+                  placeholder="Ej: Daniela Pérez"
                   className="w-full px-3 py-2.5 rounded-xl bg-white text-gray-900 text-sm font-semibold focus:outline-none"
                 />
               </div>
@@ -1368,7 +1385,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
 
               <div className="space-y-1.5">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-200">
-                  Comentarios (opcional)
+                  Comentario (opcional, se publica si lo aprueban)
                 </span>
                 <textarea
                   value={finishComments}
@@ -1379,6 +1396,29 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                 />
               </div>
 
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="map-email"
+                  className="text-[10px] font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1"
+                >
+                  <Mail className="w-3 h-3" />
+                  Email (opcional, no se publica)
+                </label>
+                <input
+                  type="email"
+                  id="map-email"
+                  value={finishEmail}
+                  onChange={(e) => setFinishEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  autoComplete="email"
+                  maxLength={120}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white text-gray-900 text-xs font-medium focus:outline-none"
+                />
+              </div>
+
+              <Captcha refreshToken={markCaptchaKey} onChange={setMarkCaptcha} idPrefix="map-mark" />
+              <PrivacyNotice dark />
+
               <label className="flex items-start gap-2 text-[11px] leading-snug text-emerald-50 selection:bg-transparent">
                 <input
                   type="checkbox"
@@ -1386,14 +1426,20 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                   onChange={(e) => setMarkAccepted(e.target.checked)}
                   className="mt-0.5 rounded border-white/40"
                 />
-                <span>Acepto que mi nombre y mi tiempo aparezcan públicamente en el ranking.</span>
+                <span>
+                  Acepto que mi primer nombre y las iniciales de las demás palabras (por ejemplo,
+                  “Daniela P.” o “Daniela P. G.”), sendero, tiempo, categoría y fecha aparezcan en el
+                  ranking público. Si soy menor, lo hago con autorización de un adulto
+                  responsable. Los comentarios se publican sólo si Modernización los
+                  aprueba. El email es opcional y no se publica.
+                </span>
               </label>
 
               {markError && <p className="text-xs font-bold text-amber-200">{markError}</p>}
 
               <button
                 onClick={handleSubmitMark}
-                disabled={markStatus === 'enviando'}
+                disabled={markStatus === 'enviando' || !markAccepted || !markCaptcha}
                 className="w-full py-3.5 bg-white text-emerald-800 font-extrabold rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-60"
               >
                 <Send className="w-4 h-4" />
@@ -1429,7 +1475,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
                 <input
                   value={nameDraft}
                   onChange={(e) => setNameDraft(e.target.value)}
-                  placeholder="Ej: Juan Pérez o Senderista2024"
+                  placeholder="Ej: Daniela Pérez"
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') confirmRunnerData();
