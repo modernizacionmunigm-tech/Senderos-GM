@@ -2,8 +2,8 @@
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png" alt="Logo Municipalidad" width="200">
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png" alt="Logo Proyecto" width="250">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/source/app/src/assets/images/mi-logo.png" alt="Logo Municipalidad" width="200">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/source/app/src/assets/images/logo-senderos-wt.png" alt="Logo Proyecto" width="250">
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-blue?logo=github&style=for-the-badge)](https://modernizacionmunigm-tech.github.io/Senderos-GM/)
 [![PWA](https://img.shields.io/badge/PWA-Instalable-brightgreen?style=for-the-badge)](https://web.dev/progressive-web-apps/)
@@ -287,7 +287,7 @@ Los rankings se organizan por categorías etarias para garantizar competencia ju
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/mi-logo-FDzbFYD5.png" alt="Municipalidad de Guardia Mitre" width="100">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/source/app/src/assets/images/mi-logo.png" alt="Municipalidad de Guardia Mitre" width="100">
 
 **Municipalidad de Guardia Mitre**  
 
@@ -295,7 +295,7 @@ Impulso fundamental e institucional en la planificación, dotación de herrajes,
 
 ---
 
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/isotipo-concejo-uFi3xZqq.png" alt="Concejo Deliberante" width="100">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/source/app/src/assets/images/isotipo-concejo.png" alt="Concejo Deliberante" width="100">
 
 **Concejo Deliberante**  
 
@@ -303,7 +303,7 @@ Aprobación y sanción oficial de la ordenanza que habilita el proyecto. Garant�
 
 ---
 
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/deporte-Bs4nf_m7.png" alt="Área de Deportes" width="100">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/source/app/src/assets/images/deporte.png" alt="Área de Deportes" width="100">
 
 **Área de Deportes - Guardia Mitre** 
 
@@ -402,7 +402,7 @@ El código fuente de este proyecto está bajo la licencia **Apache License 2.0**
 
 *Promoviendo naturaleza, salud y comunidad*
 <div align="center">
-<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/main/assets/logo-senderos-wt-DkgJGMwH.png" alt="Logo Proyecto" width="400">
+<img src="https://raw.githubusercontent.com/modernizacionmunigm-tech/Senderos-GM/source/app/src/assets/images/logo-senderos-wt.png" alt="Logo Proyecto" width="400">
 
   **Guardia Mitre, Río Negro, Argentina**  
   Coordenadas: 40°25'S 63°40'W
