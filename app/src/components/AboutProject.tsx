@@ -19,7 +19,7 @@ navigator.vibrate(ms);
 return (
 <div id="about-project-page" className="space-y-8 animate-in fade-in duration-300">
   {/* Hero Header Section */}
-  <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-blue-900 to-indigo-950 text-white p-6 sm:p-10 shadow-lg border border-blue-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+  <div className="hc-dark relative rounded-3xl overflow-hidden bg-gradient-to-br from-blue-900 to-indigo-950 text-white p-6 sm:p-10 shadow-lg border border-blue-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
     {/* Decorative elements */}
     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.15),transparent)] pointer-events-none"></div>
     <div className="relative z-10 max-w-2xl space-y-4 flex-1">
@@ -72,7 +72,7 @@ return (
       {/* Pillars of the Project */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 text-center space-y-2">
-          <div className="w-8 h-8 rounded-full bg-emerald-150 text-emerald-700 flex items-center justify-center mx-auto">
+          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
             <Heart className="w-4 h-4" />
           </div>
           <h4 className="font-bold text-xs text-gray-800 uppercase font-display">Salud Integral</h4>

@@ -316,7 +316,7 @@ export default function App() {
               <button
                 id="btn-senderos-direct-register"
                 onClick={() => { triggerVibrate(50); setRegisteringTrailId(TRAILS[0].id); }}
-                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-700 hover:to-indigo-750 text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0"
+                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0"
               >
                 <Clock className="w-4.5 h-4.5" />
                 Registrar Marca Directa
@@ -337,7 +337,7 @@ export default function App() {
             {/* If registeringTrailId is active (custom modal) */}
             {registeringTrailId && (
               <div id="register-time-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-                <div className="w-full max-w-2xl relative my-8 animate-in zoom-in-95 duration-250">
+                <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto relative my-8 animate-in zoom-in-95 duration-250">
                   <TimeForm 
                     preselectedTrailId={registeringTrailId} 
                     onTimeAdded={() => incrementRefreshRanks(true)}
@@ -456,7 +456,11 @@ export default function App() {
               </div>
             </div>
 
-            {showManualForm && <TimeForm onTimeAdded={() => incrementRefreshRanks(false)} />}
+            {showManualForm && (
+              <div className="animate-in fade-in slide-in-from-bottom-3 duration-300">
+                <TimeForm onTimeAdded={() => incrementRefreshRanks(false)} />
+              </div>
+            )}
           </div>
         )}
 

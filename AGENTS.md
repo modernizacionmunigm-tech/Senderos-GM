@@ -56,6 +56,17 @@ Los datos están en `app/src/data.ts` (senderos) y `app/src/floraData.ts` (flora
 - **Modo alto contraste** ("modo sol"): botón en el encabezado; se guarda en el
   navegador. Los bloques con fondo oscuro llevan la clase `hc-dark` (`hc-` =
   high contrast) para que no se les oscurezca el texto. Ver `index.css`.
+  **Todo bloque propio con fondo oscuro necesita `hc-dark`.** El hero de
+  "Sobre el Proyecto" (`AboutProject.tsx`) no lo tenía y en modo sol el
+  párrafo gris quedaba casi negro sobre azul oscuro; corregido el 22/10/2026.
+- **Arreglos de detalles (22/10/2026):** el botón "Registrar Marca Directa"
+  usaba `to-indigo-650` y `hover:to-indigo-750`, tonos que **no existen** en
+  Tailwind, así que el degradado terminaba en transparente y se perdía el
+  texto; ahora es `to-indigo-600`/`to-indigo-700`. Se corrigieron también
+  `bg-emerald-150` (AboutProject), `hover:bg-blue-750` y `text-gray-650`
+  (TrailCard), por el mismo motivo. El modal de `TimeForm` (App.tsx) ahora
+  tiene `max-h-[90vh]` + `overflow-y-auto`: antes se cortaba arriba y abajo en
+  pantallas bajas.
 - **Bundle separado**: `MapModule`, `FloraGuide` y `TrailMiniMap` (que trae
   Leaflet) se cargan con `React.lazy`. El arranque pasó de ~447 kB a ~295 kB.
 - El mapa y los mini-mapas usan **tiles de OpenStreetMap** (no piden clave).

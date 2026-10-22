@@ -105,7 +105,7 @@ export default function TrailCard({ trail, onViewOnMap, onRegisterTime }: TrailC
           <button
             id={`btn-trail-map-${trail.id}`}
             onClick={() => { triggerVibrate(50); onViewOnMap(trail.id); }}
-            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-750 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 shadow-sm cursor-pointer active:scale-95"
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 shadow-sm cursor-pointer active:scale-95"
           >
             <Navigation className="w-3.5 h-3.5" />
             Ver en Mapa
@@ -231,7 +231,7 @@ export default function TrailCard({ trail, onViewOnMap, onRegisterTime }: TrailC
               <button
                 id={`btn-close-modal-bottom-${trail.id}`}
                 onClick={() => { triggerVibrate(); setShowModal(false); }}
-                className="px-4 py-2 border border-gray-200 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-650 transition-all cursor-pointer"
+                className="px-4 py-2 border border-gray-200 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-600 transition-all cursor-pointer"
               >
                 Cerrar
               </button>
