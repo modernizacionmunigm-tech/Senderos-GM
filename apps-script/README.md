@@ -29,12 +29,13 @@ que devuelve sólo datos sanitizados y valida las altas.
    **Comentario aprobado** y **Email** si faltan, y pone las casillas de
    moderación en **Comentario aprobado**.
 5. Ejecutá `selftest`. Tiene que mostrar `selftest OK` en el registro.
-6. **Implementar → Nueva implementación → Aplicación web**:
+6. **Implementar → Nueva implementación → Aplicación web** (si ya existe una,
+   usá **Gestionar implementaciones → editar → Nueva versión**):
    - Ejecutar como: **Yo**.
    - Quién tiene acceso: **Cualquier persona**.
    - Implementar y copiar la URL (`https://script.google.com/macros/s/.../exec`).
-7. Pegá esa URL en `app/src/api.ts`, reemplazando `REEMPLAZAR` en
-   `API_URL_FALLBACK`, o compilá con `VITE_SENDEROS_API` definida.
+7. Pegá esa URL en `app/src/api.ts` (`API_URL_FALLBACK`) o compilá con
+   `VITE_SENDEROS_API` definida.
 8. En Google Forms, **Respuestas → No aceptar respuestas**. El formulario ya no
    se usa para altas; queda como respaldo interno.
 9. En la planilla, **Archivo → Compartir → Publicar en la web → Detener

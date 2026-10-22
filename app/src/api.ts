@@ -4,8 +4,8 @@
  * La planilla y el formulario quedan privados: la app sólo habla con el
  * Web App, que devuelve datos ya sanitizados y valida las altas.
  *
- * Para conectar: reemplazá `REEMPLAZAR` en `API_URL_FALLBACK` o definí
- * VITE_SENDEROS_API al compilar. La URL es pública por diseño; la planilla no.
+ * Para conectar: pegá la URL del despliegue en `API_URL_FALLBACK` (o definí
+ * VITE_SENDEROS_API al compilar). La URL es pública por diseño; la planilla no.
  */
 import { TimeRecord } from './types';
 
