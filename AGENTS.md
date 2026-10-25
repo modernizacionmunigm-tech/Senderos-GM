@@ -96,6 +96,29 @@ Los datos están en `app/src/data.ts` (senderos) y `app/src/floraData.ts` (flora
   señal, la marca queda en cola (`senderos_pending_marks`) y se sube sola al
   volver la conexión. Todo esto vive en **`app/src/corredor.ts`** (nombre,
   cola, envío) y en `MapModule.tsx`.
+- **Prueba en terreno (25/10/2026):**
+  - Los 3 senderos arrancan ahora del mismo punto (inicio de Baja,
+    `-40.42588, -63.66577`, cabecera Sur). Cambiado `startPoint` de Media y
+    Alta en `app/src/data.ts`.
+  - Los checkpoints ahora buscan el **punto más cercano entre los pendientes**
+    (no solo el siguiente inmediato), así si el trazado está desviado no se
+    salta validaciones. Corregido en `app/src/components/MapModule.tsx`
+    (`checkCheckpointProximity`).
+  - **Mapa en blanco al desactivar Modo Simple:** al volver de Modo Simple el
+    contenedor del mapa se recreaba pero la instancia Leaflet seguía vinculada
+    al contenedor viejo. Ahora se fuerza la recreación del mapa con una clave
+    (`mapKey`) que se incrementa al salir de Modo Simple. Corregido en
+    `app/src/components/MapModule.tsx`.
+  - Checklist de la prueba en `PRUEBA-EN-TERRENO.md` (raíz del proyecto).
+- **Mejoras del mapa tras prueba en terreno (25/10/2026):**
+  - **Zoom mayor sin fondo blanco:** `maxZoom` subido de 19 a 22 en el mapa y en
+    los tiles (calle y satelital Esri). Esri mantiene `maxNativeZoom: 17` para
+    que estire el último tile nativo en lugar de mostrar cuadrado blanco.
+  - **Flecha grande al siguiente checkpoint (opción A+C):** reemplazó a la
+    brújula pequeña. Muestra flecha grande rotada hacia el punto más cercano,
+    distancia en metros grande y cardinal. Pensada para leerla corriendo por
+    el monte donde las huellas no siempre se ven. Se muestra cuando hay
+    sendero elegido y no está en Modo Simple.
 - La tarjeta de fin pide, además del nombre, la **categoría deportiva**, un
   **comentario** ("¿Cómo estuvo el recorrido?") y un **email opcional**
   (interno, no se publica). El sendero, el tiempo, la fecha y la hora salen solos.

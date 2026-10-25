@@ -169,6 +169,10 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const [simpleMode, setSimpleMode] = useState(initialSimpleMode);
   // El mapa (que se usa a pantalla completa mientras se sigue el recorrido)
   const [mapExpanded, setMapExpanded] = useState(false);
+  // Clave del mapa: se incrementa cuando el mapa vuelve a mostrarse tras
+  // haber estado oculto por Modo Simple, para forzar la recreación del
+  // contenedor DOM y de la instancia Leaflet (evita el mapa en blanco).
+  const [mapKey, setMapKey] = useState(0);
   const [showGpsHelp, setShowGpsHelp] = useState(false);
   const [showCheckpointBtn, setShowCheckpointBtn] = useState(false);
   const [lastCheckpointIndex, setLastCheckpointIndex] = useState(-1);
@@ -240,6 +244,17 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     setSimpleMode(initialSimpleMode);
   }, [initialSimpleMode]);
 
+  // Detectar salida de Modo Simple: al volver a mostrar el mapa hay que
+  // recrear la instancia Leaflet, si no queda vinculada al contenedor viejo
+  // y el mapa se ve en blanco.
+  const prevSimpleModeRef = useRef(simpleMode);
+  useEffect(() => {
+    if (prevSimpleModeRef.current && !simpleMode) {
+      setMapKey((k) => k + 1);
+    }
+    prevSimpleModeRef.current = simpleMode;
+  }, [simpleMode]);
+
   const changeSimpleMode = (value: boolean) => {
     setSimpleMode(value);
     onSimpleModeChange?.(value);
@@ -281,15 +296,15 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     const map = L.map(mapContainerRef.current, {
       center: GUARDIA_MITRE_CENTER,
       zoom: 14,
-      maxZoom: 19,
+      maxZoom: 22, // permitir zoom mayor para seguir el trazado en terreno
       minZoom: 11,
       zoomControl: false,
     });
     mapInstanceRef.current = map;
-
     // Add normal Street tiles
     const baseTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
+      attribution: '&copy; OpenStreetMap',
+      maxZoom: 22,
     });
     baseTilesRef.current = baseTiles;
     baseTiles.addTo(map);
@@ -302,7 +317,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     const satelliteTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri',
       maxNativeZoom: 17,
-      maxZoom: 19,
+      maxZoom: 22, // permitir zoom mayor sin fondo blanco (estira el último tile)
     });
     satelliteTilesRef.current = satelliteTiles;
 
@@ -320,7 +335,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
         mapInstanceRef.current = null;
       }
     };
-  }, []);
+  }, [mapKey]);
 
   // Update Trail Rendering details when choice changes
   useEffect(() => {
@@ -496,28 +511,42 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     const trail = TRAILS.find(t => t.id === trailId);
     if (!trail) return false;
 
-    // Encontrar el siguiente checkpoint (el inicio no cuenta como checkpoint)
-    let nextPoiIndex = lastCheckpointRef.current + 1;
-    while (nextPoiIndex < trail.pointsOfInterest.length && trail.pointsOfInterest[nextPoiIndex].type === 'inicio') {
-      nextPoiIndex += 1;
-    }
-    if (nextPoiIndex >= trail.pointsOfInterest.length) {
+    // Checkpoints que faltan validar (saltamos inicio y fin)
+    const remainingPois = trail.pointsOfInterest
+      .map((poi, idx) => ({ poi, idx }))
+      .filter(({ poi, idx }) =>
+        idx > lastCheckpointRef.current &&
+        poi.type !== 'inicio' &&
+        poi.type !== 'fin'
+      );
+
+    if (remainingPois.length === 0) {
       // Ya pasó todos los puntos: puede ser que haya terminado el recorrido.
       return checkFinish(coords, trail);
     }
 
-    const nextPoi = trail.pointsOfInterest[nextPoiIndex];
-    const distanceToPoi = calculateDistance(coords[0], coords[1], nextPoi.lat, nextPoi.lng);
+    // Buscar el punto más cercano entre los restantes (no solo el siguiente
+    // inmediato). Así, si el trazado del mapa está un poco desviado del camino
+    // real, no se salta todos los puntos.
+    let closest = remainingPois[0];
+    let minDistance = calculateDistance(coords[0], coords[1], closest.poi.lat, closest.poi.lng);
+    for (const cand of remainingPois.slice(1)) {
+      const d = calculateDistance(coords[0], coords[1], cand.poi.lat, cand.poi.lng);
+      if (d < minDistance) {
+        minDistance = d;
+        closest = cand;
+      }
+    }
 
     // Radio de 30 metros para considerar que pasaste
-    if (distanceToPoi < 30) {
-      lastCheckpointRef.current = nextPoiIndex;
-      setLastCheckpointIndex(nextPoiIndex);
+    if (minDistance < 30) {
+      lastCheckpointRef.current = closest.idx;
+      setLastCheckpointIndex(closest.idx);
       const poiNumber = trail.pointsOfInterest
-        .slice(0, nextPoiIndex + 1)
+        .slice(0, closest.idx + 1)
         .filter((p) => p.type !== 'inicio' && p.type !== 'fin').length;
-      const label = nextPoi.type === 'fin' ? 'la meta' : `el punto ${poiNumber}`;
-      setCheckpointMessage(`✅ ¡Pasaste por ${label}: ${nextPoi.name}!`);
+      const label = closest.poi.type === 'fin' ? 'la meta' : `el punto ${poiNumber}`;
+      setCheckpointMessage(`✅ ¡Pasaste por ${label}: ${closest.poi.name}!`);
       setTimeout(() => setCheckpointMessage(null), 4000);
       triggerVibrate([100, 50, 100]);
       return true;
@@ -997,6 +1026,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
           En pantalla completa se sale del flujo con `fixed` y ocupa todo. */}
       {!simpleMode || !recording ? (
         <div
+          key={mapKey}
           className={[
             mapExpanded
               ? 'fixed inset-0 z-[45] h-[100dvh] w-screen bg-gray-100'
@@ -1214,39 +1244,47 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
             </div>
           )}
 
-          {/* Brújula al sendero: flecha y distancia al punto más cercano del trazado */}
+          {/* Flecha grande al siguiente checkpoint: rumbo y distancia al punto
+              más cercano del trazado. Pensada para leerla corriendo o
+              caminando por el monte, donde las huellas a veces no se ven. */}
           {!simpleMode && selectedTrailId && navInfo && (
-            <div className={`absolute ${mapExpanded && recording ? 'bottom-24' : 'bottom-4'} left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3.5 py-2 bg-white/95 backdrop-blur-md rounded-full shadow-lg border border-gray-100 max-w-[calc(100%-2rem)]`}>
-              <span
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                  navInfo.distance < 15 ? 'bg-emerald-100 text-emerald-700'
-                    : poorAccuracy ? 'bg-amber-500 text-white'
-                    : 'bg-blue-600 text-white'
-                }`}
-              >
-                {navInfo.distance < 15 ? (
-                  <CheckCircle2 className="w-4.5 h-4.5" />
-                ) : (
-                  <Navigation
-                    className="w-4.5 h-4.5"
-                    style={{ transform: `rotate(${navInfo.bearing - 45}deg)` }}
-                  />
-                )}
-              </span>
-              <div className="leading-tight min-w-0">
-                <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400 font-mono">
-                  Brújula al sendero
+            <div className={`absolute ${mapExpanded && recording ? 'bottom-28' : 'bottom-8'} left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 max-w-[calc(100%-1rem)]`}>
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100">
+                {/* Flecha grande rotada hacia el siguiente punto */}
+                <span
+                  className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-md ${
+                    navInfo.distance < 15 ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                      : poorAccuracy ? 'bg-amber-500 text-white border border-amber-300'
+                      : 'bg-blue-600 text-white border border-blue-400'
+                  }`}
+                >
+                  {navInfo.distance < 15 ? (
+                    <CheckCircle2 className="w-6 h-6" />
+                  ) : (
+                    <Navigation
+                      className="w-6 h-6"
+                      style={{ transform: `rotate(${navInfo.bearing - 45}deg)` }}
+                    />
+                  )}
                 </span>
-                <span className="block text-xs font-extrabold text-gray-800 truncate">
-                  {navInfo.distance < 15
-                    ? 'Estás sobre el sendero'
-                    : `${Math.round(navInfo.distance)} m al ${cardinalName(navInfo.bearing)}`}
-                </span>
-                {poorAccuracy && navInfo.distance >= 15 && (
-                  <span className="block text-[9px] font-bold text-amber-600">
-                    Distancia estimada: GPS impreciso
+                <div className="leading-tight min-w-0">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 font-mono">
+                    Siguiente punto del sendero
                   </span>
-                )}
+                  <span className="block text-2xl font-black font-mono text-gray-900">
+                    {navInfo.distance < 15
+                      ? 'Sobre el sendero'
+                      : `${Math.round(navInfo.distance)} m`}
+                  </span>
+                  <span className="block text-[11px] font-bold text-gray-600 uppercase tracking-wide">
+                    {cardinalName(navInfo.bearing)}
+                  </span>
+                  {poorAccuracy && navInfo.distance >= 15 && (
+                    <span className="block text-[9px] font-bold text-amber-600 mt-0.5">
+                      GPS impreciso
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}

@@ -114,7 +114,7 @@ export const TRAILS: Trail[] = [
     description: 'Recorrido exigente con terrains variados y pendientes. Ideal para quienes buscan un desafío físico en contacto con la naturaleza.',
     longDescription: 'El Sendero "Monte Mitre - Dificultad Alta" rodea las lomas y cañadones más escarpados del relieve local. Con subidas pronunciadas y descensos en suelo arenoso y arcilloso, es idóneo para entrenar trail running o realizar caminatas intensas en primavera, otoño e invierno.',
     color: '#ef4444', // red-600 (rojo)
-    startPoint: [-40.4242735, -63.6655205],
+    startPoint: [-40.42588, -63.66577], // mismo punto de partida que Baja
     coordinates: [
       // Coordenadas REALES del CSV - NO es circuito cerrado
       [-40.4242735, -63.6655205], // Inicio
@@ -217,7 +217,7 @@ export const TRAILS: Trail[] = [
     description: 'Circuito intermedio por lomas y cañadones cercanos al pueblo. Un paso más exigente que el sendero de baja, ideal para empezar a correr en el monte.',
     longDescription: 'El Sendero "Monte Mitre - Dificultad Media" recorre el sector sureste del Monte Mitre con subidas y bajadas sobre suelo arenoso. Es el paso intermedio entre el circuito de baja dificultad y el exigente recorrido de alta: tiene una distancia similar al sendero alto pero con menos desnivel, y comparte el punto de partida con los otros dos senderos. El trazado fue relevado con GPS (KMZ "Sendero Alta real").',
     color: '#f59e0b', // amber-500 (ámbar)
-    startPoint: [-40.42572, -63.66564],
+    startPoint: [-40.42588, -63.66577], // mismo punto de partida que Baja
     coordinates: [
       // Trazado real relevado con GPS (KMZ "Sendero Alta real") - circuito cerrado
       [-40.42572, -63.66564], [-40.42542, -63.66548], [-40.42485, -63.66545], [-40.42446, -63.66536], [-40.42433, -63.66554],
