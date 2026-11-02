@@ -8,7 +8,7 @@ const CSP = [
   "script-src 'self' https://script.google.com https://script.googleusercontent.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com",
+  "img-src 'self' data: blob: https://server.arcgisonline.com https://*.tile.opentopomap.org",
   "connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.open-meteo.com",
   "frame-src 'none'",
   "object-src 'none'",

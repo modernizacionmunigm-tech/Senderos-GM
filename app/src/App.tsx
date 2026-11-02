@@ -360,13 +360,24 @@ export default function App() {
                 </p>
               </div>
               
-              {/* Toggle para Modo Simple */}
-              <button
-                onClick={toggleSimpleMode}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mapSimpleMode ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}
-              >
-                {mapSimpleMode ? 'Modo Simple: ON' : 'Modo Simple: OFF'}
-              </button>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedTrailId || ''}
+                  onChange={(e) => setSelectedTrailId(e.target.value || null)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 bg-white transition-all cursor-pointer"
+                >
+                  <option value="">Recorrido libre (sin sendero)</option>
+                  {TRAILS.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={toggleSimpleMode}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mapSimpleMode ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}
+                >
+                  {mapSimpleMode ? 'Modo Simple: ON' : 'Modo Simple: OFF'}
+                </button>
+              </div>
             </div>
             
             <Suspense fallback={<div className="h-[450px] rounded-2xl bg-gray-100 animate-pulse" />}>

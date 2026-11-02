@@ -1,8 +1,3 @@
-/**
-@license
-SPDX-License-Identifier: Apache-2.0
-*/
-
 import { Trail } from './types';
 
 /// Near Guardia Mitre town center coordinates, Río Negro, Argentina
@@ -100,6 +95,93 @@ export const TRAILS: Trail[] = [
         lat: -40.4244,
         lng: -63.66526,
         description: 'Bifurcación final a la derecha para volver al punto de partida. Distancia: 2.20 km',
+        type: 'qr',
+      },
+    ],
+  },
+  {
+    id: 'monte-mitre-media',
+    name: 'Monte Mitre - Dificultad Media',
+    distance: 2.64,
+    elevationGain: 36,
+    duration: '19min',
+    difficulty: 'media',
+    description: 'Circuito intermedio por lomas y cañadones cercanos al pueblo. Un paso más exigente que el sendero de baja, ideal para empezar a correr en el monte.',
+    longDescription: 'El Sendero "Monte Mitre - Dificultad Media" recorre el sector sureste del Monte Mitre con subidas y bajadas sobre suelo arenoso. Es el paso intermedio entre el circuito de baja dificultad y el exigente recorrido de alta: tiene una distancia similar al sendero alto pero con menos desnivel, y comparte el punto de partida con los otros dos senderos. El trazado fue relevado con GPS (KMZ "Sendero Alta real").',
+    color: '#f59e0b', // amber-500 (ámbar)
+    startPoint: [-40.42588, -63.66577], // mismo punto de partida que Baja
+    coordinates: [
+      // Trazado real relevado con GPS (KMZ "Sendero Alta real") - circuito cerrado
+      [-40.42572, -63.66564], [-40.42542, -63.66548], [-40.42485, -63.66545], [-40.42446, -63.66536], [-40.42433, -63.66554],
+      [-40.42423, -63.66549], [-40.42432, -63.6655], [-40.42439, -63.6657], [-40.42426, -63.66659], [-40.42437, -63.66706],
+      [-40.42432, -63.66725], [-40.42443, -63.66727], [-40.42452, -63.66756], [-40.42444, -63.66803], [-40.42438, -63.66815],
+      [-40.42415, -63.6681], [-40.42408, -63.66818], [-40.42394, -63.66865], [-40.42394, -63.66879], [-40.42415, -63.6689],
+      [-40.42435, -63.6692], [-40.42434, -63.66928], [-40.42425, -63.66934], [-40.42389, -63.66926], [-40.42364, -63.6691],
+      [-40.42337, -63.66905], [-40.42176, -63.66808], [-40.42132, -63.66792], [-40.42106, -63.66759], [-40.42027, -63.66718],
+      [-40.41987, -63.66638], [-40.41963, -63.66643], [-40.41957, -63.66651], [-40.41957, -63.66665], [-40.41972, -63.66707],
+      [-40.42044, -63.668], [-40.42085, -63.66863], [-40.4213, -63.66899], [-40.42148, -63.66921], [-40.4216, -63.66946],
+      [-40.42229, -63.66944], [-40.42252, -63.66979], [-40.4228, -63.66956], [-40.42308, -63.66872], [-40.42328, -63.66842],
+      [-40.42336, -63.66838], [-40.423, -63.66787], [-40.42279, -63.66736], [-40.42267, -63.66722], [-40.42251, -63.66685],
+      [-40.42247, -63.66652], [-40.42218, -63.66598], [-40.42218, -63.66587], [-40.42207, -63.66573], [-40.4224, -63.66558],
+      [-40.42254, -63.66545], [-40.42268, -63.66542], [-40.42316, -63.66463], [-40.42336, -63.6645], [-40.42352, -63.66454],
+      [-40.4236, -63.66521], [-40.42377, -63.66546], [-40.4238, -63.66569], [-40.4239, -63.66577], [-40.42404, -63.66571],
+      [-40.42452, -63.66528], [-40.42469, -63.66542], [-40.42557, -63.66553], [-40.42573, -63.66565]
+    ],
+    pointsOfInterest: [
+      {
+        name: 'Inicio / Meta del Sendero',
+        lat: -40.42572,
+        lng: -63.66564,
+        description: 'Punto de partida y cierre del circuito. Distancia: 0 km',
+        type: 'inicio',
+      },
+      {
+        name: 'El primer repecho',
+        lat: -40.42426,
+        lng: -63.66659,
+        description: 'Arranque en subida sobre arena suelta, entre jarilla y monte bajo. Distancia: 280 m',
+        type: 'qr',
+      },
+      {
+        name: 'El arenal largo',
+        lat: -40.42027,
+        lng: -63.66718,
+        description: 'Recta larga de arena blanca, con el sol pegando de lleno y poco reparo. Distancia: 1.08 km',
+        type: 'qr',
+      },
+      {
+        name: 'La vuelta del viento',
+        lat: -40.41957,
+        lng: -63.66651,
+        description: 'Extremo norte del circuito, donde el viento pega fuerte y el camino gira cerrado. Distancia: 1.20 km',
+        type: 'qr',
+      },
+      {
+        name: 'El bajo del zorro',
+        lat: -40.42085,
+        lng: -63.66863,
+        description: 'Descenso hacia el oeste por un bajo arenoso, con buena vista del monte. Distancia: 1.44 km',
+        type: 'qr',
+      },
+      {
+        name: 'La sombra del chañar',
+        lat: -40.42308,
+        lng: -63.66872,
+        description: 'Trecho de sombra que dan los chañares y la vegetación de gran porte. Distancia: 1.78 km',
+        type: 'qr',
+      },
+      {
+        name: 'El filo del este',
+        lat: -40.42316,
+        lng: -63.66463,
+        description: 'Filo arenoso en el extremo este, con bajada rápida y terreno suelto. Distancia: 2.25 km',
+        type: 'qr',
+      },
+      {
+        name: 'La recta de casa',
+        lat: -40.42404,
+        lng: -63.66571,
+        description: 'Últimos metros de retorno al punto de partida. Distancia: 2.43 km',
         type: 'qr',
       },
     ],
@@ -205,93 +287,6 @@ export const TRAILS: Trail[] = [
         description: '¡Felicitaciones! Completaste el sendero de alta dificultad. Distancia total: 2.68 km',
         type: 'fin',
       }
-    ],
-  },
-  {
-    id: 'monte-mitre-media',
-    name: 'Monte Mitre - Dificultad Media',
-    distance: 2.64,
-    elevationGain: 36,
-    duration: '19min',
-    difficulty: 'media',
-    description: 'Circuito intermedio por lomas y cañadones cercanos al pueblo. Un paso más exigente que el sendero de baja, ideal para empezar a correr en el monte.',
-    longDescription: 'El Sendero "Monte Mitre - Dificultad Media" recorre el sector sureste del Monte Mitre con subidas y bajadas sobre suelo arenoso. Es el paso intermedio entre el circuito de baja dificultad y el exigente recorrido de alta: tiene una distancia similar al sendero alto pero con menos desnivel, y comparte el punto de partida con los otros dos senderos. El trazado fue relevado con GPS (KMZ "Sendero Alta real").',
-    color: '#f59e0b', // amber-500 (ámbar)
-    startPoint: [-40.42588, -63.66577], // mismo punto de partida que Baja
-    coordinates: [
-      // Trazado real relevado con GPS (KMZ "Sendero Alta real") - circuito cerrado
-      [-40.42572, -63.66564], [-40.42542, -63.66548], [-40.42485, -63.66545], [-40.42446, -63.66536], [-40.42433, -63.66554],
-      [-40.42423, -63.66549], [-40.42432, -63.6655], [-40.42439, -63.6657], [-40.42426, -63.66659], [-40.42437, -63.66706],
-      [-40.42432, -63.66725], [-40.42443, -63.66727], [-40.42452, -63.66756], [-40.42444, -63.66803], [-40.42438, -63.66815],
-      [-40.42415, -63.6681], [-40.42408, -63.66818], [-40.42394, -63.66865], [-40.42394, -63.66879], [-40.42415, -63.6689],
-      [-40.42435, -63.6692], [-40.42434, -63.66928], [-40.42425, -63.66934], [-40.42389, -63.66926], [-40.42364, -63.6691],
-      [-40.42337, -63.66905], [-40.42176, -63.66808], [-40.42132, -63.66792], [-40.42106, -63.66759], [-40.42027, -63.66718],
-      [-40.41987, -63.66638], [-40.41963, -63.66643], [-40.41957, -63.66651], [-40.41957, -63.66665], [-40.41972, -63.66707],
-      [-40.42044, -63.668], [-40.42085, -63.66863], [-40.4213, -63.66899], [-40.42148, -63.66921], [-40.4216, -63.66946],
-      [-40.42229, -63.66944], [-40.42252, -63.66979], [-40.4228, -63.66956], [-40.42308, -63.66872], [-40.42328, -63.66842],
-      [-40.42336, -63.66838], [-40.423, -63.66787], [-40.42279, -63.66736], [-40.42267, -63.66722], [-40.42251, -63.66685],
-      [-40.42247, -63.66652], [-40.42218, -63.66598], [-40.42218, -63.66587], [-40.42207, -63.66573], [-40.4224, -63.66558],
-      [-40.42254, -63.66545], [-40.42268, -63.66542], [-40.42316, -63.66463], [-40.42336, -63.6645], [-40.42352, -63.66454],
-      [-40.4236, -63.66521], [-40.42377, -63.66546], [-40.4238, -63.66569], [-40.4239, -63.66577], [-40.42404, -63.66571],
-      [-40.42452, -63.66528], [-40.42469, -63.66542], [-40.42557, -63.66553], [-40.42573, -63.66565]
-    ],
-    pointsOfInterest: [
-      {
-        name: 'Inicio / Meta del Sendero',
-        lat: -40.42572,
-        lng: -63.66564,
-        description: 'Punto de partida y cierre del circuito. Distancia: 0 km',
-        type: 'inicio',
-      },
-      {
-        name: 'El primer repecho',
-        lat: -40.42426,
-        lng: -63.66659,
-        description: 'Arranque en subida sobre arena suelta, entre jarilla y monte bajo. Distancia: 280 m',
-        type: 'qr',
-      },
-      {
-        name: 'El arenal largo',
-        lat: -40.42027,
-        lng: -63.66718,
-        description: 'Recta larga de arena blanca, con el sol pegando de lleno y poco reparo. Distancia: 1.08 km',
-        type: 'qr',
-      },
-      {
-        name: 'La vuelta del viento',
-        lat: -40.41957,
-        lng: -63.66651,
-        description: 'Extremo norte del circuito, donde el viento pega fuerte y el camino gira cerrado. Distancia: 1.20 km',
-        type: 'qr',
-      },
-      {
-        name: 'El bajo del zorro',
-        lat: -40.42085,
-        lng: -63.66863,
-        description: 'Descenso hacia el oeste por un bajo arenoso, con buena vista del monte. Distancia: 1.44 km',
-        type: 'qr',
-      },
-      {
-        name: 'La sombra del chañar',
-        lat: -40.42308,
-        lng: -63.66872,
-        description: 'Trecho de sombra que dan los chañares y la vegetación de gran porte. Distancia: 1.78 km',
-        type: 'qr',
-      },
-      {
-        name: 'El filo del este',
-        lat: -40.42316,
-        lng: -63.66463,
-        description: 'Filo arenoso en el extremo este, con bajada rápida y terreno suelto. Distancia: 2.25 km',
-        type: 'qr',
-      },
-      {
-        name: 'La recta de casa',
-        lat: -40.42404,
-        lng: -63.66571,
-        description: 'Últimos metros de retorno al punto de partida. Distancia: 2.43 km',
-        type: 'qr',
-      },
     ],
   },
 ];

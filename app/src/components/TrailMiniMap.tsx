@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Trail } from '../types';
+import { openTileLayer } from '../mapTiles';
 
 interface TrailMiniMapProps {
   trail: Trail;
@@ -37,11 +38,9 @@ export default function TrailMiniMap({ trail }: TrailMiniMapProps) {
 
     mapRef.current = map;
 
-    // Fondo OpenStreetMap estándar: no necesita clave y no deja marca de agua
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(map);
+    // Fondo con respaldo (ver mapTiles.ts): arranca en Esri y, si la conexión
+    // no responde, cambia solo. OSM dejó de servir tiles a la app.
+    openTileLayer('street').addTo(map);
 
     // Draw the polyline tracing the coordinates path
     const polylineCoords = trail.coordinates.map(coord => [coord[0], coord[1]] as [number, number]);

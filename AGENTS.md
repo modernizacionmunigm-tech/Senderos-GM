@@ -69,8 +69,34 @@ Los datos están en `app/src/data.ts` (senderos) y `app/src/floraData.ts` (flora
   pantallas bajas.
 - **Bundle separado**: `MapModule`, `FloraGuide` y `TrailMiniMap` (que trae
   Leaflet) se cargan con `React.lazy`. El arranque pasó de ~447 kB a ~295 kB.
-- El mapa y los mini-mapas usan **tiles de OpenStreetMap** (no piden clave).
-  CARTO quedó descartado: ahora exige API key y deja marca de agua.
+- El mapa y los mini-mapas usan **tiles de Esri** (World Street Map para la
+  base calle y World Imagery para el satelital): sin clave y sin marca de agua.
+  **OpenStreetMap quedó afuera (02/11/2026):** los servidores de voluntarios
+  devuelven el cartel *"App is not following the tile usage policy"* y los
+  mapas salen rotos. CARTO también quedó descartado: exige API key y deja
+  marca de agua.
+- **Fondo con respaldo automático (02/11/2026, `app/src/mapTiles.ts`):** la capa
+  de tiles ya no se crea a mano en cada componente. `openTileLayer('street' |
+  'satellite')` arranca en Esri y, si el fondo no carga, cambia solo a
+  **OpenTopoMap** (`{s}.tile.opentopomap.org`, CC-BY-SA, sin clave). Salta por
+  dos motivos: **4 errores seguidos** de tile, o **5 segundos sin que cargue ni
+  un tile** (pedidos colgados: es el caso que dejaba el mapa gris sin ningún
+  error en consola). Si tampoco hay respaldo, el mapa muestra *"No se pudo
+  cargar el fondo del mapa"* con botón **Reintentar** (recrea el mapa con
+  `mapKey`). La CSP de `vite.config.ts` tiene que permitir **todos** los hosts
+  de tiles en `img-src`: hoy `server.arcgisonline.com` y
+  `*.tile.opentopomap.org`. Si se suma un proveedor, se agrega también ahí.
+  - **Descartado:** `tile.openstreetmap.de` y `tile.openstreetmap.fr` como
+    respaldo. Desde una página web devuelven una página 404/HTML y el navegador
+    la bloquea (`ERR_BLOCKED_BY_ORB`), así que el respaldo no servía. Se probó
+    en Chromium real, no sólo con `Invoke-WebRequest` (que sí recibía el tile).
+  - **Diagnóstico 02/11/2026:** las teclas de Esri responden 200 desde la
+    máquina y en Chromium headless (12/12 tiles), así que el mapa gris del
+    usuario fue un corte de red hacia Akamai en su sesión, no un error de
+    código. La app ahora se auto-recupera y avisa.
+- Al recrear el mapa (`mapKey`: salir de Modo Simple, Reintentar del fondo) el
+  efecto que dibuja los senderos ahora depende también de `mapKey`; antes los
+  trazados no volvían a dibujarse.
 - Deep links para los QR de cartelería: `?tab=` y `?sendero=baja|media|alta`
   (o el id completo) ya funcionan. Falta `?poi=` para abrir un punto puntual.
 - El ranking se alimenta de un **Web App de Apps Script** (`apps-script/Code.gs`)
@@ -119,6 +145,16 @@ Los datos están en `app/src/data.ts` (senderos) y `app/src/floraData.ts` (flora
     distancia en metros grande y cardinal. Pensada para leerla corriendo por
     el monte donde las huellas no siempre se ven. Se muestra cuando hay
     sendero elegido y no está en Modo Simple.
+- **Reordenamiento y selector de mapa (25/10/2026):**
+  - Los senderos en la página "Senderos" ahora se muestran en orden:
+    **Baja, Media, Alta** (antes era Baja, Alta, Media). Reordenado el array
+    `TRAILS` en `app/src/data.ts`.
+  - Los 3 senderos arrancan del **mismo punto de partida** (inicio de Baja,
+    `-40.42588, -63.66577`, cabecera Sur): `startPoint` idéntico en los 3.
+  - En la página "Mapa" se agregó un **selector de sendero** con las opciones
+    "Recorrido libre (sin sendero)", Baja, Media y Alta. Al elegir uno se sigue
+    ese trazado y se validan sus checkpoints; al elegir recorrido libre se
+    ven los 3 trazados sin validar puntos.
 - La tarjeta de fin pide, además del nombre, la **categoría deportiva**, un
   **comentario** ("¿Cómo estuvo el recorrido?") y un **email opcional**
   (interno, no se publica). El sendero, el tiempo, la fecha y la hora salen solos.

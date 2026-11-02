@@ -5,6 +5,8 @@ SPDX-License-Identifier: Apache-2.0
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { openTileLayer } from '../mapTiles';
+import type { TileStatus } from '../mapTiles';
 import {
   Play,
   Square,
@@ -15,6 +17,7 @@ import {
   Activity,
   Crosshair,
   RotateCcw,
+  RefreshCw,
   AlertTriangle,
   EyeOff,
   Eye,
@@ -33,6 +36,14 @@ import { getRunnerName, saveRunnerName, getRunnerCategory, saveRunnerCategory, f
 import { type CaptchaAnswer } from '../api';
 import Captcha from './Captcha';
 import PrivacyNotice from './PrivacyNotice';
+
+/** Fondo del mapa: calles ('street') o imagen satelital ('satellite'). */
+type MapType = 'street' | 'satellite';
+
+// Fondo con el que abre el mapa: satelital, porque en el monte se distingue
+// mejor el terreno (huellas, cortinas de monte) que sobre el dibujo de calles,
+// que en la zona casi no tiene datos. Decidido el 02/11/2026.
+const DEFAULT_MAP_TYPE: MapType = 'satellite';
 
 // Helper function to calculate distance using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -150,7 +161,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   const startInfoRef = useRef<{ dateISO: string; time: string }>({ dateISO: '', time: '' });
 
   // States
-  const [mapType, setMapType] = useState<'street' | 'satellite'>('street');
+  const [mapType, setMapType] = useState<MapType>(DEFAULT_MAP_TYPE);
   const [recording, setRecording] = useState(false);
   const [recordPath, setRecordPath] = useState<[number, number][]>([]);
   const [totalDistance, setTotalDistance] = useState(0); // in meters
@@ -173,6 +184,17 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
   // haber estado oculto por Modo Simple, para forzar la recreación del
   // contenedor DOM y de la instancia Leaflet (evita el mapa en blanco).
   const [mapKey, setMapKey] = useState(0);
+  // El fondo (tiles) puede no cargar: proveedor bloqueado, red que corta los
+  // pedidos, etc. Si no queda ningún proveedor, se avisa y se ofrece reintentar.
+  // Se guarda por tipo (calle / satelital) y se muestra el del fondo en uso.
+  const tileDownRef = useRef({ street: false, satellite: false });
+  const mapTypeRef = useRef<MapType>(DEFAULT_MAP_TYPE);
+  const [tilesDown, setTilesDown] = useState(false);
+
+  const applyTileStatus = (kind: 'street' | 'satellite', status: TileStatus) => {
+    tileDownRef.current[kind] = status.state === 'down';
+    if (mapTypeRef.current === kind) setTilesDown(status.state === 'down');
+  };
   const [showGpsHelp, setShowGpsHelp] = useState(false);
   const [showCheckpointBtn, setShowCheckpointBtn] = useState(false);
   const [lastCheckpointIndex, setLastCheckpointIndex] = useState(-1);
@@ -277,6 +299,8 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
 
   // Switch Tile layers safely
   useEffect(() => {
+    mapTypeRef.current = mapType;
+    setTilesDown(tileDownRef.current[mapType]);
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
     if (mapType === 'street') {
@@ -301,25 +325,28 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
       zoomControl: false,
     });
     mapInstanceRef.current = map;
-    // Add normal Street tiles
-    const baseTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap',
-      maxZoom: 22,
+    const baseTiles = openTileLayer('street', (status) => {
+      console.info('[mapa] tiles de calles:', status);
+      applyTileStatus('street', status);
     });
     baseTilesRef.current = baseTiles;
-    baseTiles.addTo(map);
 
-    // Add satellite tiles (Esri)
+    // Add satellite tiles (Esri) con respaldo en mapTiles.ts.
     // maxNativeZoom: en el campo la imagen de Esri no llega a los últimos
     // niveles de zoom y devuelve "Map data not yet available" (el cuadrado
     // gris). Hasta el nivel 17 hay imagen; más cerca, Leaflet agranda la
     // última que sirve en vez de mostrar el cartel de error.
-    const satelliteTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri',
-      maxNativeZoom: 17,
-      maxZoom: 22, // permitir zoom mayor sin fondo blanco (estira el último tile)
+    const satelliteTiles = openTileLayer('satellite', (status) => {
+      console.info('[mapa] tiles satelitales:', status);
+      applyTileStatus('satellite', status);
     });
     satelliteTilesRef.current = satelliteTiles;
+
+    // Se agrega sólo el fondo en uso (no los dos encima: sería el doble de
+    // pedidos de tiles y uno taparía al otro). Se lee del ref para que, al
+    // recrearse el mapa (mapKey, por ejemplo al salir de Modo Simple), vuelva
+    // con el fondo que el usuario tenía elegido y no con el de fábrica.
+    (mapTypeRef.current === 'satellite' ? satelliteTiles : baseTiles).addTo(map);
 
     // Create groups
     trailsGroupRef.current = L.featureGroup().addTo(map);
@@ -426,7 +453,7 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
     } else {
       map.setView(GUARDIA_MITRE_CENTER, 14);
     }
-  }, [selectedTrailId]);
+  }, [selectedTrailId, mapKey]);
 
   // Handle active user custom marker + círculo de precisión GPS
   const updateUserMarker = (lat: number, lng: number, accuracy: number) => {
@@ -1227,6 +1254,32 @@ export default function MapModule({ selectedTrailId, onSelectTrail, initialSimpl
               >
                 <HelpCircle className="w-3.5 h-3.5" />
                 ¿Cómo lo activo? Paso a paso
+              </button>
+            </div>
+          )}
+
+          {/* Fondo del mapa caído: no es un problema del recorrido, pero conviene
+              decirlo y dar salida, en vez de dejar el mapa gris sin explicación. */}
+          {tilesDown && (
+            <div className={`absolute ${geolocationError || poorAccuracy ? 'top-44' : 'top-16'} left-4 right-4 z-30 p-3 bg-white/95 backdrop-blur-md border border-gray-200 text-gray-800 rounded-xl text-[11px] shadow-md`}>
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <strong>No se pudo cargar el fondo del mapa.</strong>{' '}
+                  Los senderos y los puntos sí están; lo que falta es la imagen
+                  satelital o de calles (la conexión no llega al servidor de mapas).
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  triggerVibrate();
+                  setTilesDown(false);
+                  setMapKey((k) => k + 1);
+                }}
+                className="mt-2 w-full py-1.5 bg-white border border-gray-300 text-gray-800 font-bold rounded-lg flex items-center justify-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Reintentar
               </button>
             </div>
           )}
