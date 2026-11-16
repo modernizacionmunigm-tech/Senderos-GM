@@ -17,6 +17,11 @@
       .\publicar.ps1              -> compila y publica
       .\publicar.ps1 -Mensaje "Agregar sendero de bajada"
       .\publicar.ps1              -> si no hay cambios, te avisa y no hace nada
+      .\publicar.ps1 -Cuenta "otra-cuenta-github"   -> si cambia la cuenta del repo
+
+  Ojo con la cuenta de GitHub: la maquina tiene mas de una guardada y el push
+  tiene que salir con la de este repo (`modernizacionmunigm-tech`). El script
+  ya la fija solo (ver Invoke-Git), asi que no deberia pedirte elegir cuenta.
 
   Como funciona:
       1. `npm run build` en app\  -> genera app\dist\
@@ -32,7 +37,8 @@
 param(
   [switch]$Simular,
   [string]$Mensaje,
-  [switch]$SinBuild
+  [switch]$SinBuild,
+  [string]$Cuenta = 'modernizacionmunigm-tech'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -51,10 +57,17 @@ if (-not (Test-Path -LiteralPath (Join-Path $app 'package.json'))) {
 # core.autocrlf=false es a proposito: en Windows git convierte LF->CRLF al
 # bajar los archivos, y eso ensucia las comparaciones. Con false, lo que hay
 # en el disco es exactamente lo que hay guardado en git.
+#
+# credential.username: esta maquina tiene MAS DE UNA cuenta de GitHub guardada
+# en el Administrador de credenciales de Windows (por ejemplo una personal y la
+# de este repo). Sin decirle cual, git agarra la que aparece primero y el push
+# muere con 403 "denied to <otra cuenta>". Fijando el usuario, git le pide a
+# Git Credential Manager justo la credencial de esta cuenta y no aparece el
+# selector de cuentas. Se puede cambiar con -Cuenta "otra-cuenta".
 function Invoke-Git {
   param([string[]]$Argumentos)
   $ErrorActionPreference = 'Continue'
-  $salida = & git -c core.autocrlf=false @Argumentos 2>&1
+  $salida = & git -c core.autocrlf=false -c "credential.username=$Cuenta" @Argumentos 2>&1
   $codigo = $LASTEXITCODE
   if ($codigo -ne 0) {
     throw ("git " + ($Argumentos -join ' ') + " fallo (codigo $codigo): " + ($salida -join ' '))

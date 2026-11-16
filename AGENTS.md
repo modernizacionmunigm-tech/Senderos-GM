@@ -254,6 +254,11 @@ Desde la carpeta del proyecto (no desde `app\`):
 
 `main` es una copia de `app\dist\`. Pasos y comandos exactos: **`DESPLIEGUE.md`**.
 
+`publicar.ps1` fija la cuenta de GitHub del repo (`modernizacionmunigm-tech`) en
+cada llamada a git. **Esta máquina tiene más de una cuenta guardada y eso es a
+propósito**: sin fijarla, git agarra la otra y el push muere con **403**. Se
+cambia con `-Cuenta`. Detalle en `DESPLIEGUE.md`.
+
 El push a `main` lo publica un workflow de **GitHub Actions**
 (`.github\workflows\pages.yml`, que vive en `main` junto con `.nojekyll`).
 Tarda uno o dos minutos y se ve en la pestaña **Actions**. La publicación

@@ -54,31 +54,49 @@ recarga, sino el navegador te muestra lo viejo).
 Si el workflow falla, el sitio **sigue mostrando la publicación anterior**: no
 queda en blanco. El error se lee en la pestaña Actions.
 
-## Si el push falla con 403
+## Si el push falla con 403 (varias cuentas de GitHub)
 
-Desde el 16/11/2026 esta máquina tiene **dos cuentas de GitHub** guardadas en el
-Administrador de credenciales de Windows y git agarra la equivocada
-(`guardiamitreclub-lgtm`, que **no** tiene permiso sobre este repo). El síntoma
-es este, y el build y el commit local ya quedaron hechos (el script corta en el
-push, así que `_publicado\` queda armado):
+Esta máquina tiene **más de una cuenta de GitHub** guardada en el Administrador
+de credenciales de Windows, y eso es **a propósito**: hay una cuenta personal
+para otros repos y la de este proyecto. Si a git no se le dice cuál usar, agarra
+la que aparece primero y el push muere:
 
 ```
-remote: Permission to modernizacionmunigm-tech/Senderos-GM.git denied to guardiamitreclub-lgtm.
+remote: Permission to modernizacionmunigm-tech/Senderos-GM.git denied to <otra-cuenta>.
 fatal: unable to access '...': The requested URL returned error: 403
 ```
 
-Arreglo del momento: empujar a mano desde la copia de trabajo, diciéndole a git
-qué cuenta usar. Después se borra la copia como siempre.
+**No hay nada que borrar ni "arreglar"**: las dos cuentas están bien. Lo que
+hay que hacer es **decirle a git la cuenta del repo**.
+
+`publicar.ps1` ya lo hace solo: fija `credential.username=modernizacionmunigm-tech`
+en todas sus llamadas a git, así que no aparece el selector de cuentas ni hay que
+elegir nada a mano. Si algún día el repo cambia de dueño:
 
 ```powershell
-$pub = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Senderos\_publicado"
-git -c credential.username=modernizacionmunigm-tech -C $pub push origin main
-git -C "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Senderos" worktree remove --force $pub
+.\publicar.ps1 -Cuenta "la-cuenta-nueva"
 ```
 
-Lo mismo sirve para `origin source`. Arreglo de fondo (no probado todavía):
-quitar del Administrador de credenciales la entrada que sobra, o dejar sólo la
-de `modernizacionmunigm-tech`, que ya está guardada para `git:https://github.com`.
+Si estás empujando **a mano** (por ejemplo `origin source`), agregá lo mismo:
+
+```powershell
+git -c credential.username=modernizacionmunigm-tech -C <carpeta> push origin source
+```
+
+Si el build y el commit ya se hicieron y el script cortó en el push, la copia de
+trabajo `_publicado\` queda armada: se empuja desde ahí y después se borra.
+
+```powershell
+$s   = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Senderos"
+$pub = "$s\_publicado"
+git -c credential.username=modernizacionmunigm-tech -C $pub push origin main
+git -C $s worktree remove --force $pub
+```
+
+> Git Credential Manager sólo te va a pedir elegir cuenta o volver a iniciar
+> sesión si **no** encuentra la credencial guardada de esa cuenta (por ejemplo,
+> si venció el token). Ahí sí hay que estar atento y elegir
+> `modernizacionmunigm-tech`.
 
 ## Si lo tenés que hacer a mano
 
