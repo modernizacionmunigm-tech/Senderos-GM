@@ -309,6 +309,13 @@ workflow. No borrar esos dos archivos de `main`: `publicar.ps1` no los toca.
   (ignorada por git).
 - `app/assets/img/`: copia vieja de las imágenes. Las que usa el build son las de
   `app/src/assets/images/`.
+- Los restos del debug de esbuild del 02/11/2026 (`esbuild_temp.exe` de 10 MB,
+  `test_spawn.js`, `test_spawn.cjs`, `test_spawn_detached.cjs`,
+  `vite.config.min.js`) se movieron el 16/11/2026 a
+  `_historico\debug-esbuild-2026-11\`. Eran pruebas para entender el
+  `spawn EPERM` del sandbox: **el build necesita lanzar el proceso hijo de
+  esbuild**, así que si `npm run build` falla con eso, hay que correrlo con
+  permiso amplio, no tocar el código.
 
 ## Convenciones
 

@@ -54,6 +54,32 @@ recarga, sino el navegador te muestra lo viejo).
 Si el workflow falla, el sitio **sigue mostrando la publicación anterior**: no
 queda en blanco. El error se lee en la pestaña Actions.
 
+## Si el push falla con 403
+
+Desde el 16/11/2026 esta máquina tiene **dos cuentas de GitHub** guardadas en el
+Administrador de credenciales de Windows y git agarra la equivocada
+(`guardiamitreclub-lgtm`, que **no** tiene permiso sobre este repo). El síntoma
+es este, y el build y el commit local ya quedaron hechos (el script corta en el
+push, así que `_publicado\` queda armado):
+
+```
+remote: Permission to modernizacionmunigm-tech/Senderos-GM.git denied to guardiamitreclub-lgtm.
+fatal: unable to access '...': The requested URL returned error: 403
+```
+
+Arreglo del momento: empujar a mano desde la copia de trabajo, diciéndole a git
+qué cuenta usar. Después se borra la copia como siempre.
+
+```powershell
+$pub = "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Senderos\_publicado"
+git -c credential.username=modernizacionmunigm-tech -C $pub push origin main
+git -C "C:\Users\Lenovo\Documents\Proyectos\Modernizacion Municipalidad\Senderos" worktree remove --force $pub
+```
+
+Lo mismo sirve para `origin source`. Arreglo de fondo (no probado todavía):
+quitar del Administrador de credenciales la entrada que sobra, o dejar sólo la
+de `modernizacionmunigm-tech`, que ya está guardada para `git:https://github.com`.
+
 ## Si lo tenés que hacer a mano
 
 Pasos exactos, equivalentes al script. Ojo: el repo es **la carpeta del
