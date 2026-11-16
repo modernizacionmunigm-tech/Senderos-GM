@@ -2,7 +2,7 @@
 @license
 SPDX-License-Identifier: Apache-2.0
 */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Camera,
   Search,
@@ -22,6 +22,7 @@ import {
   Database
 } from 'lucide-react';
 import { SPECIES_LIST, Species } from '../floraData';
+import { GUARDIA_MITRE_CENTER } from '../data';
 
 export default function FloraGuide() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +35,26 @@ export default function FloraGuide() {
   const [previewUrlForID, setPreviewUrlForID] = useState<string | null>(null);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [idResult, setIdResult] = useState<{ name: string; sci: string; confidence: number; speciesId?: string } | null>(null);
+
+  // Ubicación que se manda al registrar un avistamiento: la real del teléfono
+  // si hay GPS y permiso; si no, el centro de Guardia Mitre (data.ts).
+  // Antes eran coordenadas fijas con la longitud corrida casi un grado al este
+  // (-62.7230 en vez de -63.66xx): el avistamiento caía a ~85 km del monte.
+  const [reportCoords, setReportCoords] = useState<{ lat: number; lng: number }>({
+    lat: GUARDIA_MITRE_CENTER[0],
+    lng: GUARDIA_MITRE_CENTER[1],
+  });
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setReportCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        // Sin permiso, sin señal o fuera de plazo: queda el centro del pueblo.
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 120000 }
+    );
+  }, []);
 
   const triggerVibrate = (ms: number = 40) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -110,16 +131,19 @@ export default function FloraGuide() {
 
   // iNaturalist helper link
   const buildINaturalistLink = (sp: Species) => {
-    // Geo coordinates for Monte Mitre area
-    const lat = -40.4357;
-    const lng = -62.7230;
+    // Las coordenadas ya fijan el lugar: no hace falta place_id (que además
+    // espera un número, no el texto "argentina").
+    const lat = reportCoords.lat.toFixed(5);
+    const lng = reportCoords.lng.toFixed(5);
     const termEncoded = encodeURIComponent(sp.scientificName);
-    return `https://www.inaturalist.org/observations/new?latitude=${lat}&longitude=${lng}&taxon_name=${termEncoded}&place_id=argentina`;
+    return `https://www.inaturalist.org/observations/new?latitude=${lat}&longitude=${lng}&taxon_name=${termEncoded}`;
   };
 
   const openDeepINaturalist = (sp: Species) => {
     triggerVibrate(50);
-    const deepLink = `inaturalist://observations/new?latitude=-40.4357&longitude=-62.7230&taxon_name=${encodeURIComponent(sp.scientificName)}`;
+    const lat = reportCoords.lat.toFixed(5);
+    const lng = reportCoords.lng.toFixed(5);
+    const deepLink = `inaturalist://observations/new?latitude=${lat}&longitude=${lng}&taxon_name=${encodeURIComponent(sp.scientificName)}`;
     
     // Attempt standard deep link block launch
     const iframe = document.createElement('iframe');
@@ -212,6 +236,10 @@ export default function FloraGuide() {
             <li className="flex items-start gap-2 text-xs text-blue-700">
               <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
               <span>Contribuye a la ciencia ciudadana</span>
+            </li>
+            <li className="flex items-start gap-2 text-xs text-blue-700">
+              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
+              <span>Registra el avistamiento donde estás (usa el GPS del teléfono)</span>
             </li>
           </ul>
           <a

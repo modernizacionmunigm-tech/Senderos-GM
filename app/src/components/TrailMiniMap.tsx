@@ -40,14 +40,24 @@ export default function TrailMiniMap({ trail }: TrailMiniMapProps) {
 
     // Fondo con respaldo (ver mapTiles.ts): arranca en Esri y, si la conexión
     // no responde, cambia solo. OSM dejó de servir tiles a la app.
-    openTileLayer('street').addTo(map);
+    // Satelital, igual que el mapa grande: sobre el dibujo de calles (casi sin
+    // datos en el monte) la ficha no mostraba el terreno. Decidido 02/11/2026.
+    openTileLayer('satellite').addTo(map);
 
     // Draw the polyline tracing the coordinates path
     const polylineCoords = trail.coordinates.map(coord => [coord[0], coord[1]] as [number, number]);
+    // Halo blanco debajo: sobre la imagen satelital el trazado verde se perdía
+    // entre el monte. El borde claro lo separa en cualquier fondo.
+    L.polyline(polylineCoords, {
+      color: '#ffffff',
+      weight: 9,
+      opacity: 0.9,
+      lineJoin: 'round'
+    }).addTo(map);
     const polyline = L.polyline(polylineCoords, {
       color: trail.color || '#10b981',
       weight: 4,
-      opacity: 0.85,
+      opacity: 0.95,
       lineJoin: 'round'
     }).addTo(map);
 

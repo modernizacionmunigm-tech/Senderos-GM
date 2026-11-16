@@ -75,6 +75,16 @@ Los datos están en `app/src/data.ts` (senderos) y `app/src/floraData.ts` (flora
   devuelven el cartel *"App is not following the tile usage policy"* y los
   mapas salen rotos. CARTO también quedó descartado: exige API key y deja
   marca de agua.
+- **El mapa abre en vista satelital (02/11/2026):** `DEFAULT_MAP_TYPE =
+  'satellite'` en `MapModule.tsx`, porque sobre el dibujo de calles —que en el
+  monte casi no tiene datos— no se distingue el terreno. El botón de capas
+  (arriba a la derecha del mapa) sigue pasando a calles cuando se quiere, y el
+  fondo elegido se respeta al entrar y salir de Modo Simple (el mapa se recrea
+  con `mapKey` y vuelve con el fondo en uso, leído de `mapTypeRef`; antes volvía
+  siempre al de fábrica). Los **mini-mapas de las fichas** (`TrailMiniMap.tsx`)
+  también pasaron a satelital y el trazado lleva un **halo blanco** debajo
+  (`weight` 9, blanco al 90 %) para que la línea no se pierda contra el verde
+  del monte.
 - **Fondo con respaldo automático (02/11/2026, `app/src/mapTiles.ts`):** la capa
   de tiles ya no se crea a mano en cada componente. `openTileLayer('street' |
   'satellite')` arranca en Esri y, si el fondo no carga, cambia solo a
@@ -106,8 +116,13 @@ Los datos están en `app/src/data.ts` (senderos) y `app/src/floraData.ts` (flora
   iNaturalist y el simulador de identificación de PlantNet (elige una especie
   del catálogo al azar y muestra un porcentaje: **es una simulación, no
   identifica de verdad**). El usuario decidió en oct 2026 dejarlo como estaba y
-  **no** sumar enlaces a otras apps. El enlace de "Registrar avistamiento" usa
-  coordenadas fijas: revisar antes de confiar en él.
+  **no** sumar enlaces a otras apps. El enlace de "Registrar avistamiento"
+  (iNaturalist) **quedó arreglado el 03/11/2026**: usaba coordenadas fijas con la
+  longitud corrida casi un grado al este (`-62.7230` en vez de `-63.66xx`), así
+  que el avistamiento se registraba a ~85 km del monte. Ahora pide la ubicación
+  real al GPS del teléfono y, si no hay permiso o señal, cae en
+  `GUARDIA_MITRE_CENTER` (`data.ts`). También se sacó `place_id=argentina`, que
+  espera un número y no un texto; las coordenadas ya fijan el lugar.
 - **Cronómetro que valida el recorrido y carga el tiempo solo** (oct 2026):
   al entrar al mapa pide el nombre **y la categoría deportiva** una vez (se
   guardan en el teléfono, `senderos_runner_name` y `senderos_runner_category`),
